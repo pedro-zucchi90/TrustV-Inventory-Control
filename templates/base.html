@@ -12,14 +12,17 @@
 <body>
     {% if current_user.is_authenticated %}
     <div class="sidebar">
-        <div class="logo">TrustV Inventory Control</div>
+        <div class="logo" style="text-align:center; padding-bottom: 0;">
+            <img src="{{ url_for('static', filename='img/logoinventory.png') }}" alt="Logo" style="max-width: 180px; max-height: 120px; display: block; margin: 0 auto 8px auto;">
+        </div>
         <nav style="position: relative;">
             <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}active nav-current{% endif %}"><i class="bi bi-speedometer2"></i> Dashboard</a>
             <a href="{{ url_for('listar_produtos') }}" class="{% if request.endpoint == 'listar_produtos' %}active nav-current{% endif %}"><i class="bi bi-box-seam"></i> Produtos</a>
             <a href="{{ url_for('registrar_movimentacao', tipo='compra') }}" class="{% if request.endpoint == 'registrar_movimentacao' and request.args.get('tipo') == 'compra' %}active nav-current{% endif %}"><i class="bi bi-cart-plus"></i> Compras</a>
             <a href="{{ url_for('registrar_movimentacao', tipo='venda') }}" class="{% if request.endpoint == 'registrar_movimentacao' and request.args.get('tipo') == 'venda' %}active nav-current{% endif %}"><i class="bi bi-cart-check"></i> Vendas</a>
+            <a href="{{ url_for('listar_devolucoes') }}" class="{% if request.endpoint == 'listar_devolucoes' %}active nav-current{% endif %}"><i class="bi bi-arrow-return-left"></i> Devoluções</a>
             <a href="{{ url_for('listar_movimentacoes') }}" class="{% if request.endpoint == 'listar_movimentacoes' %}active nav-current{% endif %}"><i class="bi bi-clock-history"></i> Histórico de Movimentações</a>
-            <a href="{{ url_for('relatorio_fiscal') }}" class="{% if request.endpoint == 'relatorio_fiscal' %}active nav-current{% endif %}"><i class="bi bi-file-earmark-bar-graph"></i> Relatório Geral</a>
+            <a href="{{ url_for('relatorio_fiscal') }}" class="{% if request.endpoint == 'relatorio_fiscal' %}active nav-current{% endif %}"><i class="bi bi-file-earmark-bar-graph"></i> Relatório Fiscal</a>
             <a href="{{ url_for('relatorio_geral_completo') }}" class="{% if request.endpoint == 'relatorio_geral_completo' %}active nav-current{% endif %}"><i class="bi bi-file-earmark-text"></i> Relatório Completo</a>
         </nav>
         <!-- Removido o botão Minha Conta -->
@@ -57,6 +60,9 @@
     {% else %}
     <div class="d-flex flex-column justify-content-center align-items-center min-vh-100" style="background:#0f1419;">
         <div class="w-100" style="max-width: 400px;">
+            <div style="text-align:center; margin-bottom: 24px;">
+                <img src="{{ url_for('static', filename='img/logoinventory.png') }}" alt="Logo" style="max-width: 240px; max-height: 160px; display: block; margin: 0 auto 8px auto;">
+            </div>
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     {% for category, message in messages %}

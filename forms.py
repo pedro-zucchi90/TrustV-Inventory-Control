@@ -2,6 +2,12 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, FileField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional
 
+# Importar formulários específicos
+from forms_type.cadastro_produto_form import CadastroProdutoForm
+from forms_type.login_form import LoginForm
+from forms_type.movimentacao_form import MovimentacaoForm
+from forms_type.devolucao_form import DevolucaoForm
+
 class CadastroUsuarioForm(FlaskForm):
     nome = StringField('Nome', validators=[DataRequired(), Length(min=2, max=50)])
     email = StringField('E-mail', validators=[DataRequired(), Email()])

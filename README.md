@@ -3,10 +3,39 @@
 ## Visão Geral
 O TrustV Inventory Control é um sistema de gestão de inventário e controle fiscal, desenvolvido para empresas que precisam de precisão e segurança na apuração de custos e impostos, conforme as normas da Receita Federal do Brasil.
 
+---
+
+### Backend
+- [Flask](https://flask.palletsprojects.com/)
+- [Flask-Login](https://flask-login.readthedocs.io/)
+- [Flask-WTF](https://flask-wtf.readthedocs.io/)
+- [Flask-Bcrypt](https://flask-bcrypt.readthedocs.io/)
+- [Flask-SQLAlchemy](https://flask-sqlalchemy.palletsprojects.com/)
+- [SQLite](https://www.sqlite.org/index.html)
+
+### Frontend
+<a href="https://developer.mozilla.org/pt-BR/docs/Web/HTML"><img src="https://img.shields.io/badge/HTML5-%23E34F26?style=for-the-badge&logo=html5&logoColor=white" alt="HTML5"></a>
+<a href="https://developer.mozilla.org/pt-BR/docs/Web/CSS"><img src="https://img.shields.io/badge/CSS3-%231572B6?style=for-the-badge&logo=css3&logoColor=white" alt="CSS3"></a>
+<a href="https://developer.mozilla.org/pt-BR/docs/Web/JavaScript"><img src="https://img.shields.io/badge/JavaScript-%23F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript"></a>
+
+### Bibliotecas e Recursos
+<a href="https://fontawesome.com/"><img src="https://img.shields.io/badge/Font_Awesome-%23339AF0?style=for-the-badge&logo=fontawesome&logoColor=white" alt="Font Awesome"></a>
+<a href="https://fonts.google.com/"><img src="https://img.shields.io/badge/Google_Fonts-%234285F4?style=for-the-badge&logo=google&logoColor=white" alt="Google Fonts"></a>
+<a href="https://getbootstrap.com/"><img src="https://img.shields.io/badge/Bootstrap-%237952B3?style=for-the-badge&logo=bootstrap&logoColor=white" alt="Bootstrap"></a>
+<a href="https://www.chartjs.org/"><img src="https://img.shields.io/badge/Chart.js-%23FF6384?style=for-the-badge&logo=chartdotjs&logoColor=white" alt="Chart.js"></a>
+
+### Recursos JavaScript Utilizados
+<img src="https://img.shields.io/badge/ES6+-%23F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="ES6+">
+<img src="https://img.shields.io/badge/DOM_Manipulation-%23F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="DOM Manipulation">
+<img src="https://img.shields.io/badge/Event_Listeners-%23F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="Event Listeners">
+<img src="https://img.shields.io/badge/Intersection_Observer-%23F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="Intersection Observer">
+
+---
+
 ## Estrutura do Projeto
 
 ```
-/trustv_inventory_control
+/CadastroProdutos
 │
 ├── app.py                # Arquivo principal do Flask
 ├── /models/              # Modelos do banco (SQLAlchemy)
@@ -15,27 +44,33 @@ O TrustV Inventory Control é um sistema de gestão de inventário e controle fi
 │   ├── usuario.py        # Modelos de Usuário, Roles, Permissões
 │   ├── movimentacao.py   # Modelos de Movimentação
 │   ├── auditoria.py      # Modelos de Auditoria
+│   ├── devolucao.py      # Modelo de Devolução de Venda
 │
-├── /forms/               # Formulários WTForms
+├── /forms_type/          # Formulários WTForms
 │   ├── __init__.py
 │   ├── login_form.py
 │   ├── cadastro_produto_form.py
 │   ├── movimentacao_form.py
+│   ├── devolucao_form.py
 │
 ├── /templates/           # Templates HTML (Jinja2)
 │   ├── base.html
 │   ├── login.html
-│   ├── dashboard.html
+│   ├── index.html        # Dashboard
 │   ├── produtos.html
 │   ├── relatorio_fiscal.html
 │   ├── auditoria.html
 │   ├── movimentacoes.html
 │   ├── registrar_movimentacao.html
+│   ├── registrar_devolucao.html
+│   ├── devolucoes.html
+│   ├── relatorio_geral_completo.html
+│   ├── editar_conta.html
 │
-├── /static/              # Arquivos estáticos (CSS, JS, fonts)
+├── /static/              # Arquivos estáticos (CSS, imagens)
 │   ├── css/
-│   │   └── custom.css
-│   ├── fonts/
+│   │   └── custom.css    # Estilos customizados do sistema
+│   ├── profile_pics/
 │
 ├── config.py             # Configurações do app (banco, secret key, etc)
 ├── requirements.txt      # Dependências Python
@@ -49,9 +84,16 @@ O TrustV Inventory Control é um sistema de gestão de inventário e controle fi
 - Relatórios fiscais e alertas de divergência
 - Autenticação de usuários (Flask-Login)
 - Auditoria e rastreamento de alterações
-- Exportação de relatórios fiscais (CSV)
+- Exportação de relatórios fiscais (CSV e PDF)
 - API para preço médio dos produtos e preço médio geral
-- Interface web responsiva
+- Sistema de devolução de vendas integrado ao estoque
+- Interface web responsiva e moderna
+
+## Usabilidade e Visual
+- **Botões de ação rápida**: Centralizados, com tamanho consistente, espaçamento equilibrado entre ícone e texto, e largura adaptável ao grid. O texto é automaticamente reduzido se for muito longo, mantendo o layout limpo.
+- **Responsividade**: Todos os componentes se adaptam a diferentes tamanhos de tela, inclusive botões e tabelas.
+- **Contraste e acessibilidade**: Cores e espaçamentos otimizados para leitura e navegação.
+- **Ajuste automático de fonte**: Botões e textos importantes nunca quebram o layout, mesmo com nomes grandes.
 
 ## Como Executar
 1. Instale as dependências:
@@ -69,6 +111,7 @@ O TrustV Inventory Control é um sistema de gestão de inventário e controle fi
 - Relatórios prontos para auditoria e exportação
 - Alertas automáticos de divergência fiscal
 - Auditoria completa de ações
+- Sistema de devolução de vendas com ajuste automático de estoque
 
 ---
 Desenvolvido por TrustV. 

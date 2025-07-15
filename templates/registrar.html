@@ -1,34 +1,21 @@
 {% extends 'base.html' %}
 {% block content_public %}
-<div class="container mt-5" style="max-width: 400px;">
-    <h2 class="mb-4">Criar nova conta</h2>
+<div class="container mt-5 register-dark" style="max-width: 400px; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.35); padding: 32px 24px;">
+    <h2 class="mb-4" style="color: #fff;">Criar Conta</h2>
     <form method="POST">
-        {{ form.hidden_tag() }}
+        <input type="hidden" name="csrf_token" value="{{ form.csrf_token._value() }}">
+        {% for field in form if field.type != 'CSRFToken' and field.type != 'SubmitField' %}
         <div class="mb-3">
-            {{ form.nome.label(class="form-label") }}
-            {{ form.nome(class="form-control") }}
-            {% for error in form.nome.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+            {{ field.label(class="form-label", style="color:#fff;") }}
+            {{ field(class="form-control", style="background:#181c24; color:#fff; border:1.5px solid #232936; border-radius:8px;") }}
+            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
         </div>
+        {% endfor %}
         <div class="mb-3">
-            {{ form.email.label(class="form-label") }}
-            {{ form.email(class="form-control") }}
-            {% for error in form.email.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+            {{ form.submit(class="btn btn-primary w-100", style="background:#2563eb; border:none; color:#fff; font-weight:600; border-radius:8px;") }}
         </div>
-        <div class="mb-3">
-            {{ form.senha.label(class="form-label") }}
-            {{ form.senha(class="form-control") }}
-            {% for error in form.senha.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-        </div>
-        <div class="mb-3">
-            {{ form.confirmar_senha.label(class="form-label") }}
-            {{ form.confirmar_senha(class="form-control") }}
-            {% for error in form.confirmar_senha.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-        </div>
-        <div class="mb-3">
-            {{ form.submit(class="btn btn-primary w-100") }}
-        </div>
-        <div class="text-center">
-            <a href="{{ url_for('login') }}">Já possui conta? Entrar</a>
+        <div class="text-center mt-3">
+            <a href="{{ url_for('login') }}" style="color:#60a5fa;">Já possui conta? Entrar</a>
         </div>
     </form>
 </div>

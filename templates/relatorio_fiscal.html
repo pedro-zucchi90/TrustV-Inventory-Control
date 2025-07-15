@@ -2,9 +2,12 @@
 {% block content %}
 <div class="container mt-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-4">Relatório Fiscal do Mês</h2>
+        <h2 class="mb-4" style="font-weight:800; letter-spacing:1px; color:#2c3e50;">Relatório Fiscal do Mês</h2>
         <div>
-            <a href="{{ url_for('exportar_relatorio_fiscal') }}" class="btn btn-outline-primary">Exportar Relatório CSV</a>
+            <a href="{{ url_for('recalcular_fiscais') }}" class="btn btn-warning" onclick="return confirm('Recalcular campos fiscais?')">
+                <i class="bi bi-arrow-clockwise"></i> Recalcular Fiscais
+            </a>
+            <a href="{{ url_for('exportar_relatorio_fiscal') }}" class="btn btn-outline-primary ms-2">Exportar Relatório CSV</a>
             <a href="{{ url_for('relatorio_estoque') }}" class="btn btn-outline-success ms-2">Relatório de Estoque</a>
         </div>
     </div>
@@ -17,32 +20,68 @@
         </ul>
     </div>
 {% endif %}
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Data</th>
-                <th>Produto</th>
-                <th>Quantidade</th>
-                <th>Valor Unitário (Venda)</th>
-                <th>Custo na Venda</th>
-                <th>Margem de Lucro</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for venda in vendas %}
-            <tr>
-                <td>{{ venda.data.strftime('%d/%m/%Y %H:%M') }}</td>
-                <td>{{ venda.produto.nome }}</td>
-                <td>{{ venda.quantidade }}</td>
-                <td>R$ {{ venda.valor_unitario }}</td>
-                <td>R$ {{ venda.custo_unitario if venda.custo_unitario is not none else 0 }}</td>
-                <td>R$ {{ (venda.valor_unitario - (venda.custo_unitario if venda.custo_unitario is not none else 0)) * venda.quantidade }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <div class="alert alert-info mt-4">
-        <strong>Margem de Lucro Total do Mês:</strong> R$ {{ margem_lucro }}
+    <div class="table-box">
+        <table class="table table-striped">
+                                <thead>
+                        <tr>
+                            <th style="color:#2c3e50; background:#f8f9fa;">Data</th>
+                            <th style="color:#2c3e50; background:#f8f9fa;">Tipo</th>
+                            <th style="color:#2c3e50; background:#f8f9fa;">Produto</th>
+                            <th style="color:#2c3e50; background:#f8f9fa;">Quantidade</th>
+                            <th style="color:#2c3e50; background:#f8f9fa;">Valor Unitário</th>
+                            <th style="color:#2c3e50; background:#f8f9fa;">Custo Unitário</th>
+                            <th style="color:#2c3e50; background:#f8f9fa;">% Desconto</th>
+                            <th style="color:#2c3e50; background:#f8f9fa;">Desconto</th>
+                            <th style="color:#2c3e50; background:#f8f9fa;">Impostos</th>
+                            <th style="color:#2c3e50; background:#f8f9fa;">CMV</th>
+                            <th style="color:#2c3e50; background:#f8f9fa;">Margem de Lucro</th>
+                        </tr>
+                    </thead>
+            <tbody>
+                {% for venda in vendas %}
+                <tr style="background:#ffffff;">
+                    <td style="color:#2c3e50;">{{ venda.data.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td style="color:#2c3e50; font-weight:600;">{{ venda.tipo|title }}</td>
+                    <td style="color:#2c3e50;">{{ venda.produto.nome }}</td>
+                    <td style="color:#2c3e50; font-weight:600;">{{ venda.quantidade }}</td>
+                    <td style="color:#1e88e5; font-weight:600;">R$ {{ "%.2f"|format(venda.valor_unitario)|replace('.', ',') }}</td>
+                    <td style="color:#6c757d;">R$ {{ "%.2f"|format(venda.custo_unitario if venda.custo_unitario is not none else 0)|replace('.', ',') }}</td>
+                    <td style="color:#dc3545; font-weight:600;">{{ "%.1f"|format(venda.percentual_desconto)|replace('.', ',') }}%</td>
+                    <td style="color:#dc3545; font-weight:600;">R$ {{ "%.2f"|format(venda.desconto_venda)|replace('.', ',') }}</td>
+                    <td style="color:#ffc107; font-weight:600;">R$ {{ "%.2f"|format(venda.imposto_vendas)|replace('.', ',') }}</td>
+                    <td style="color:#6f42c1; font-weight:600;">R$ {{ "%.2f"|format(venda.cmv)|replace('.', ',') }}</td>
+                    <td style="color:#28a745; font-weight:600;">R$ {{ "%.2f"|format((venda.valor_unitario - (venda.custo_unitario if venda.custo_unitario is not none else 0)) * venda.quantidade)|replace('.', ',') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
+    
+    <!-- Resumo Fiscal -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card shadow-lg border-0" style="background:#ffffff; color:#2c3e50; border:1px solid #e9ecef;">
+                <div class="card-header border-0" style="background:#f8f9fa; color:#2c3e50; font-weight:700; border-bottom:1px solid #dee2e6;">Resumo Fiscal</div>
+                <div class="card-body">
+                    <p><strong style="color:#2c3e50;">Margem de Lucro Total:</strong> <span style="color:#28a745; font-weight:600;">R$ {{ "%.2f"|format(margem_lucro)|replace('.', ',') }}</span></p>
+                    <p><strong style="color:#2c3e50;">Total de Descontos:</strong> <span style="color:#dc3545; font-weight:600;">R$ {{ "%.2f"|format(total_descontos if total_descontos is defined else 0)|replace('.', ',') }}</span></p>
+                    <p><strong style="color:#2c3e50;">Total de Impostos:</strong> <span style="color:#ffc107; font-weight:600;">R$ {{ "%.2f"|format(total_impostos if total_impostos is defined else 0)|replace('.', ',') }}</span></p>
+                    <p><strong style="color:#2c3e50;">CMV Total:</strong> <span style="color:#6f42c1; font-weight:600;">R$ {{ "%.2f"|format(total_cmv if total_cmv is defined else 0)|replace('.', ',') }}</span></p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-lg border-0" style="background:#ffffff; color:#2c3e50; border:1px solid #e9ecef;">
+                <div class="card-header border-0" style="background:#f8f9fa; color:#2c3e50; font-weight:700; border-bottom:1px solid #dee2e6;">Despesas</div>
+                <div class="card-body">
+                    <p><strong style="color:#2c3e50;">Despesas Administrativas:</strong> <span style="color:#17a2b8; font-weight:600;">R$ {{ "%.2f"|format(despesas_administrativas if despesas_administrativas is defined else 0)|replace('.', ',') }}</span></p>
+                    <p><strong style="color:#2c3e50;">Despesas Comerciais:</strong> <span style="color:#fd7e14; font-weight:600;">R$ {{ "%.2f"|format(despesas_comerciais if despesas_comerciais is defined else 0)|replace('.', ',') }}</span></p>
+                    <p><strong style="color:#2c3e50;">Total de Despesas:</strong> <span style="color:#6c757d; font-weight:600;">R$ {{ "%.2f"|format((despesas_administrativas if despesas_administrativas is defined else 0) + (despesas_comerciais if despesas_comerciais is defined else 0))|replace('.', ',') }}</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Espaço extra abaixo do resumo fiscal -->
+    <div style="height: 48px;"></div>
 </div>
 {% endblock %} 

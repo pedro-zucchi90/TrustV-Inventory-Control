@@ -8,4 +8,5 @@ class MovimentacaoForm(FlaskForm):
     quantidade = IntegerField('Quantidade', validators=[DataRequired(), NumberRange(min=1)])
     valor_unitario = DecimalField('Valor Unitário (apenas para compras)', validators=[Optional(), NumberRange(min=0)])
     valor_venda = DecimalField('Valor de Venda (apenas para vendas)', validators=[Optional(), NumberRange(min=0)])
+    percentual_desconto = DecimalField('Percentual de Desconto (%)', validators=[Optional(), NumberRange(min=0, max=100)], default=0)
     submit = SubmitField('Registrar') 

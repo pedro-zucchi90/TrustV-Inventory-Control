@@ -24,6 +24,11 @@
             {{ form.valor_venda.label(class="form-label") }}
             {{ form.valor_venda(class="form-control") }}
         </div>
+        <div class="mb-3" id="campo-desconto" style="display: none;">
+            {{ form.percentual_desconto.label(class="form-label") }}
+            {{ form.percentual_desconto(class="form-control", placeholder="0.00") }}
+            <small class="form-text text-muted">Digite o percentual de desconto (ex: 5.00 para 5%)</small>
+        </div>
         <div class="mb-3">
             {{ form.submit(class="btn btn-primary w-100") }}
         </div>
@@ -34,6 +39,7 @@
         var tipo = document.querySelector('[name="tipo"]').value;
         document.getElementById('campo-compra').style.display = tipo === 'compra' ? '' : 'none';
         document.getElementById('campo-venda').style.display = tipo === 'venda' ? '' : 'none';
+        document.getElementById('campo-desconto').style.display = tipo === 'venda' ? '' : 'none';
     }
     document.querySelector('[name="tipo"]').addEventListener('change', toggleCampos);
     window.onload = toggleCampos;

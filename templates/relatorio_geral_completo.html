@@ -2,7 +2,7 @@
 {% block content %}
 <div class="container mt-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0" style="font-weight:800; letter-spacing:1px; color:#fff;">Relatório Geral Completo</h2>
+        <h2 class="mb-0" style="font-weight:800; letter-spacing:1px; color:#2c3e50;">Relatório Geral Completo</h2>
         <div>
             <a href="{{ url_for('relatorio_geral_pdf') }}" class="btn btn-primary"><i class="bi bi-file-earmark-pdf"></i> Exportar PDF</a>
             <button onclick="exportarRelatorio()" class="btn btn-outline-primary ms-2"><i class="bi bi-download"></i> Exportar CSV</button>
@@ -12,34 +12,34 @@
     <!-- Resumo Geral -->
     <div class="row mb-4">
         <div class="col-md-3">
-            <div class="card text-center shadow-lg border-0" style="background:#23272f; color:#fff;">
+            <div class="card text-center shadow-lg border-0" style="background:#ffffff; color:#2c3e50; border:1px solid #e9ecef;">
                 <div class="card-body">
-                    <h2 class="card-title mb-1" id="total-produtos" style="font-size:2.2rem; font-weight:900;">-</h2>
-                    <p class="card-text text-uppercase text-secondary">Total de Produtos</p>
+                    <h2 class="card-title mb-1" id="total-produtos" style="font-size:2.2rem; font-weight:900; color:#1e88e5;">-</h2>
+                    <p class="card-text text-uppercase" style="color:#6c757d; font-weight:600;">Total de Produtos</p>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card text-center shadow-lg border-0" style="background:#23272f; color:#fff;">
+            <div class="card text-center shadow-lg border-0" style="background:#ffffff; color:#2c3e50; border:1px solid #e9ecef;">
                 <div class="card-body">
-                    <h2 class="card-title mb-1" id="total-estoque" style="font-size:2.2rem; font-weight:900;">-</h2>
-                    <p class="card-text text-uppercase text-secondary">Itens em Estoque</p>
+                    <h2 class="card-title mb-1" id="total-estoque" style="font-size:2.2rem; font-weight:900; color:#28a745;">-</h2>
+                    <p class="card-text text-uppercase" style="color:#6c757d; font-weight:600;">Itens em Estoque</p>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card text-center shadow-lg border-0" style="background:#23272f; color:#fff;">
+            <div class="card text-center shadow-lg border-0" style="background:#ffffff; color:#2c3e50; border:1px solid #e9ecef;">
                 <div class="card-body">
-                    <h2 class="card-title mb-1" id="valor-estoque" style="font-size:2.2rem; font-weight:900;">-</h2>
-                    <p class="card-text text-uppercase text-secondary">Valor Total Estoque</p>
+                    <h2 class="card-title mb-1" id="valor-estoque" style="font-size:2.2rem; font-weight:900; color:#6f42c1;">-</h2>
+                    <p class="card-text text-uppercase" style="color:#6c757d; font-weight:600;">Valor Total Estoque</p>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card text-center shadow-lg border-0" style="background:#23272f; color:#fff;">
+            <div class="card text-center shadow-lg border-0" style="background:#ffffff; color:#2c3e50; border:1px solid #e9ecef;">
                 <div class="card-body">
-                    <h2 class="card-title mb-1" id="data-relatorio" style="font-size:1.1rem; font-weight:700;">-</h2>
-                    <p class="card-text text-uppercase text-secondary">Data do Relatório</p>
+                    <h2 class="card-title mb-1" id="data-relatorio" style="font-size:1.1rem; font-weight:700; color:#6c757d;">-</h2>
+                    <p class="card-text text-uppercase" style="color:#6c757d; font-weight:600;">Data do Relatório</p>
                 </div>
             </div>
         </div>
@@ -48,29 +48,29 @@
     <!-- Vendas do Mês -->
     <div class="row mb-4">
         <div class="col-md-6">
-            <div class="card shadow-lg border-0" style="background:#23272f; color:#fff;">
-                <div class="card-header border-0" style="background:#181c22; color:#fff; font-weight:700;">Vendas do Mês Atual</div>
+            <div class="card shadow-lg border-0" style="background:#ffffff; color:#2c3e50; border:1px solid #e9ecef;">
+                <div class="card-header border-0" style="background:#f8f9fa; color:#2c3e50; font-weight:700; border-bottom:1px solid #dee2e6;">Vendas do Mês Atual</div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-6">
-                            <p><strong>Total de Vendas:</strong> <span id="total-vendas">-</span></p>
-                            <p><strong>Quantidade Vendida:</strong> <span id="qtd-vendida">-</span></p>
+                            <p><strong style="color:#2c3e50;">Total de Vendas:</strong> <span id="total-vendas" style="color:#1e88e5; font-weight:600;">-</span></p>
+                            <p><strong style="color:#2c3e50;">Quantidade Vendida:</strong> <span id="qtd-vendida" style="color:#1e88e5; font-weight:600;">-</span></p>
                         </div>
                         <div class="col-6">
-                            <p><strong>Valor das Vendas:</strong> R$ <span id="valor-vendas">-</span></p>
-                            <p><strong>Margem de Lucro:</strong> R$ <span id="margem-lucro">-</span></p>
-                            <p><strong>Margem Média:</strong> <span id="margem-media">-</span>%</p>
+                            <p><strong style="color:#2c3e50;">Valor das Vendas:</strong> R$ <span id="valor-vendas" style="color:#28a745; font-weight:600;">-</span></p>
+                            <p><strong style="color:#2c3e50;">Margem de Lucro:</strong> R$ <span id="margem-lucro" style="color:#28a745; font-weight:600;">-</span></p>
+                            <p><strong style="color:#2c3e50;">Margem Média:</strong> <span id="margem-media" style="color:#1e88e5; font-weight:600;">-</span>%</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-md-6">
-            <div class="card shadow-lg border-0" style="background:#23272f; color:#fff;">
-                <div class="card-header border-0" style="background:#181c22; color:#fff; font-weight:700;">Alertas</div>
+            <div class="card shadow-lg border-0" style="background:#ffffff; color:#2c3e50; border:1px solid #e9ecef;">
+                <div class="card-header border-0" style="background:#f8f9fa; color:#2c3e50; font-weight:700; border-bottom:1px solid #dee2e6;">Alertas e Monitoramento</div>
                 <div class="card-body">
                     <div id="alertas-container">
-                        <p class="text-muted">Carregando alertas...</p>
+                        <p style="color:#6c757d;">Carregando alertas...</p>
                     </div>
                 </div>
             </div>
@@ -80,21 +80,21 @@
     <!-- Produtos Mais Vendidos e Margens -->
     <div class="row mb-4">
         <div class="col-md-6">
-            <div class="card shadow-lg border-0" style="background:#23272f; color:#fff;">
-                <div class="card-header border-0" style="background:#181c22; color:#fff; font-weight:700;">Produtos Mais Vendidos (30 dias)</div>
+            <div class="card shadow-lg border-0" style="background:#ffffff; color:#2c3e50; border:1px solid #e9ecef;">
+                <div class="card-header border-0" style="background:#f8f9fa; color:#2c3e50; font-weight:700; border-bottom:1px solid #dee2e6;">Produtos Mais Vendidos (30 dias)</div>
                 <div class="card-body">
                     <div id="produtos-mais-vendidos">
-                        <p class="text-muted">Carregando...</p>
+                        <p style="color:#6c757d;">Carregando...</p>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-md-6">
-            <div class="card shadow-lg border-0" style="background:#23272f; color:#fff;">
-                <div class="card-header border-0" style="background:#181c22; color:#fff; font-weight:700;">Top 10 Margens de Lucro</div>
+            <div class="card shadow-lg border-0" style="background:#ffffff; color:#2c3e50; border:1px solid #e9ecef;">
+                <div class="card-header border-0" style="background:#f8f9fa; color:#2c3e50; font-weight:700; border-bottom:1px solid #dee2e6;">Top 10 Margens de Lucro</div>
                 <div class="card-body">
                     <div id="produtos-margem">
-                        <p class="text-muted">Carregando...</p>
+                        <p style="color:#6c757d;">Carregando...</p>
                     </div>
                 </div>
             </div>
@@ -102,22 +102,22 @@
     </div>
 
     <!-- Movimentações Recentes -->
-    <div class="card mb-4 shadow-lg border-0" style="background:#23272f; color:#fff;">
-        <div class="card-header border-0" style="background:#181c22; color:#fff; font-weight:700;">Movimentações Recentes</div>
+    <div class="card mb-4 shadow-lg border-0" style="background:#ffffff; color:#2c3e50; border:1px solid #e9ecef;">
+        <div class="card-header border-0" style="background:#f8f9fa; color:#2c3e50; font-weight:700; border-bottom:1px solid #dee2e6;">Movimentações Recentes</div>
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-striped">
                     <thead>
                         <tr>
-                            <th>Data</th>
-                            <th>Tipo</th>
-                            <th>Produto</th>
-                            <th>Quantidade</th>
-                            <th>Valor Unitário</th>
+                            <th style="color:#2c3e50; background:#f8f9fa;">Data</th>
+                            <th style="color:#2c3e50; background:#f8f9fa;">Tipo</th>
+                            <th style="color:#2c3e50; background:#f8f9fa;">Produto</th>
+                            <th style="color:#2c3e50; background:#f8f9fa;">Quantidade</th>
+                            <th style="color:#2c3e50; background:#f8f9fa;">Valor Unitário</th>
                         </tr>
                     </thead>
                     <tbody id="movimentacoes-recentes">
-                        <tr><td colspan="5" class="text-center">Carregando...</td></tr>
+                        <tr><td colspan="5" class="text-center" style="color:#6c757d;">Carregando...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -125,22 +125,50 @@
     </div>
 
     <!-- Categorias -->
-    <div class="card shadow-lg border-0" style="background:#23272f; color:#fff;">
-        <div class="card-header border-0" style="background:#181c22; color:#fff; font-weight:700;">Resumo por Categoria</div>
+    <div class="card shadow-lg border-0" style="background:#ffffff; color:#2c3e50; border:1px solid #e9ecef;">
+        <div class="card-header border-0" style="background:#f8f9fa; color:#2c3e50; font-weight:700; border-bottom:1px solid #dee2e6;">Resumo por Categoria</div>
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-striped">
                     <thead>
                         <tr>
-                            <th>Categoria</th>
-                            <th>Quantidade em Estoque</th>
-                            <th>Valor Total</th>
+                            <th style="color:#2c3e50; background:#f8f9fa;">Categoria</th>
+                            <th style="color:#2c3e50; background:#f8f9fa;">Quantidade em Estoque</th>
+                            <th style="color:#2c3e50; background:#f8f9fa;">Valor Total</th>
                         </tr>
                     </thead>
                     <tbody id="categorias-tbody">
-                        <tr><td colspan="3" class="text-center">Carregando...</td></tr>
+                        <tr><td colspan="3" class="text-center" style="color:#6c757d;">Carregando...</td></tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Espaço visual antes da análise fiscal detalhada -->
+    <div style="height: 32px;"></div>
+
+    <!-- Análise Fiscal Detalhada -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-lg border-0" style="background:#ffffff; color:#2c3e50; border:1px solid #e9ecef;">
+                <div class="card-header border-0" style="background:#f8f9fa; color:#2c3e50; font-weight:700; border-bottom:1px solid #dee2e6;">Dados Fiscais</div>
+                <div class="card-body">
+                    <p><strong style="color:#2c3e50;">Devoluções de Venda:</strong> <span id="devolucoes-venda" style="color:#dc3545; font-weight:600;">-</span></p>
+                    <p><strong style="color:#2c3e50;">Descontos sobre Venda:</strong> <span id="descontos-venda" style="color:#dc3545; font-weight:600;">-</span></p>
+                    <p><strong style="color:#2c3e50;">Impostos sobre Vendas:</strong> <span id="impostos-vendas" style="color:#ffc107; font-weight:600;">-</span></p>
+                    <p><strong style="color:#2c3e50;">CMV Total:</strong> <span id="cmv-total" style="color:#6f42c1; font-weight:600;">-</span></p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-lg border-0" style="background:#ffffff; color:#2c3e50; border:1px solid #e9ecef;">
+                <div class="card-header border-0" style="background:#f8f9fa; color:#2c3e50; font-weight:700; border-bottom:1px solid #dee2e6;">Despesas</div>
+                <div class="card-body">
+                    <p><strong style="color:#2c3e50;">Despesas Administrativas:</strong> <span id="despesas-administrativas" style="color:#17a2b8; font-weight:600;">-</span></p>
+                    <p><strong style="color:#2c3e50;">Despesas Comerciais:</strong> <span id="despesas-comerciais" style="color:#fd7e14; font-weight:600;">-</span></p>
+                    <p><strong style="color:#2c3e50;">Total de Despesas:</strong> <span id="total-despesas" style="color:#6c757d; font-weight:600;">-</span></p>
+                </div>
             </div>
         </div>
     </div>
@@ -167,19 +195,19 @@ function carregarRelatorio() {
             // Alertas
             let alertasHtml = '';
             if (data.alertas.total_alertas === 0) {
-                alertasHtml = '<p class="text-success">Nenhum alerta encontrado.</p>';
+                alertasHtml = '<p style="color:#28a745; font-weight:600;">Nenhum alerta encontrado.</p>';
             } else {
                 if (data.alertas.estoque_baixo.length > 0) {
-                    alertasHtml += '<h6 class="text-danger">Estoque Baixo:</h6><ul>';
+                    alertasHtml += '<h6 style="color:#dc3545; font-weight:700;">Estoque Baixo:</h6><ul>';
                     data.alertas.estoque_baixo.forEach(a => {
-                        alertasHtml += `<li>${a.produto} (${a.quantidade} unidades)</li>`;
+                        alertasHtml += `<li style="color:#2c3e50;">${a.produto} (${a.quantidade} unidades)</li>`;
                     });
                     alertasHtml += '</ul>';
                 }
                 if (data.alertas.estoque_alto.length > 0) {
-                    alertasHtml += '<h6 class="text-warning">Estoque Alto:</h6><ul>';
+                    alertasHtml += '<h6 style="color:#ffc107; font-weight:700;">Estoque Alto:</h6><ul>';
                     data.alertas.estoque_alto.forEach(a => {
-                        alertasHtml += `<li>${a.produto} (${a.quantidade} unidades)</li>`;
+                        alertasHtml += `<li style="color:#2c3e50;">${a.produto} (${a.quantidade} unidades)</li>`;
                     });
                     alertasHtml += '</ul>';
                 }
@@ -189,10 +217,11 @@ function carregarRelatorio() {
             // Produtos Mais Vendidos
             let maisVendidosHtml = '';
             if (data.produtos_mais_vendidos.length === 0) {
-                maisVendidosHtml = '<p class="text-muted">Nenhuma venda nos últimos 30 dias.</p>';
+                maisVendidosHtml = '<p style="color:#6c757d;">Nenhuma venda nos últimos 30 dias.</p>';
             } else {
                 data.produtos_mais_vendidos.forEach((p, index) => {
-                    maisVendidosHtml += `<p><strong>${index + 1}.</strong> ${p.nome} - ${p.quantidade} unidades</p>`;
+                    const posicao = `${index + 1}.`;
+                    maisVendidosHtml += `<p style="color:#2c3e50;"><strong style="color:#1e88e5;">${posicao}</strong> ${p.nome} - <span style="color:#28a745; font-weight:600;">${p.quantidade} unidades</span></p>`;
                 });
             }
             document.getElementById('produtos-mais-vendidos').innerHTML = maisVendidosHtml;
@@ -200,10 +229,11 @@ function carregarRelatorio() {
             // Produtos Margem
             let margemHtml = '';
             if (data.produtos_margem.length === 0) {
-                margemHtml = '<p class="text-muted">Nenhum produto com margem calculada.</p>';
+                margemHtml = '<p style="color:#6c757d;">Nenhum produto com margem calculada.</p>';
             } else {
                 data.produtos_margem.forEach((p, index) => {
-                    margemHtml += `<p><strong>${index + 1}.</strong> ${p.nome} - ${p.margem}%</p>`;
+                    const posicao = `${index + 1}.`;
+                    margemHtml += `<p style="color:#2c3e50;"><strong style="color:#1e88e5;">${posicao}</strong> ${p.nome} - <span style="color:#28a745; font-weight:600;">${p.margem}%</span></p>`;
                 });
             }
             document.getElementById('produtos-margem').innerHTML = margemHtml;
@@ -211,16 +241,16 @@ function carregarRelatorio() {
             // Movimentações Recentes
             let movHtml = '';
             if (data.movimentacoes_recentes.length === 0) {
-                movHtml = '<tr><td colspan="5" class="text-center">Nenhuma movimentação encontrada.</td></tr>';
+                movHtml = '<tr><td colspan="5" class="text-center" style="color:#6c757d;">Nenhuma movimentação encontrada.</td></tr>';
             } else {
                 data.movimentacoes_recentes.forEach(m => {
-                    const tipoClass = m.tipo === 'venda' ? 'text-danger' : 'text-success';
-                    movHtml += `<tr>
-                        <td>${m.data}</td>
-                        <td class="${tipoClass}">${m.tipo.toUpperCase()}</td>
-                        <td>${m.produto}</td>
-                        <td>${m.quantidade}</td>
-                        <td>R$ ${m.valor_unitario.toFixed(2).replace('.', ',')}</td>
+                    const tipoClass = m.tipo === 'venda' ? 'color:#dc3545; font-weight:600;' : 'color:#28a745; font-weight:600;';
+                    movHtml += `<tr style="background:#ffffff;">
+                        <td style="color:#2c3e50;">${m.data}</td>
+                        <td style="${tipoClass}">${m.tipo.toUpperCase()}</td>
+                        <td style="color:#2c3e50;">${m.produto}</td>
+                        <td style="color:#2c3e50; font-weight:600;">${m.quantidade}</td>
+                        <td style="color:#1e88e5; font-weight:600;">R$ ${m.valor_unitario.toFixed(2).replace('.', ',')}</td>
                     </tr>`;
                 });
             }
@@ -229,17 +259,29 @@ function carregarRelatorio() {
             // Categorias
             let catHtml = '';
             if (Object.keys(data.categorias).length === 0) {
-                catHtml = '<tr><td colspan="3" class="text-center">Nenhuma categoria encontrada.</td></tr>';
+                catHtml = '<tr><td colspan="3" class="text-center" style="color:#6c757d;">Nenhuma categoria encontrada.</td></tr>';
             } else {
                 Object.entries(data.categorias).forEach(([categoria, dados]) => {
-                    catHtml += `<tr>
-                        <td>${categoria}</td>
-                        <td>${dados.quantidade}</td>
-                        <td>R$ ${dados.valor.toFixed(2).replace('.', ',')}</td>
+                    catHtml += `<tr style="background:#ffffff;">
+                        <td style="color:#2c3e50; font-weight:600;">${categoria}</td>
+                        <td style="color:#2c3e50;">${dados.quantidade}</td>
+                        <td style="color:#1e88e5; font-weight:600;">R$ ${dados.valor.toFixed(2).replace('.', ',')}</td>
                     </tr>`;
                 });
             }
             document.getElementById('categorias-tbody').innerHTML = catHtml;
+
+            // Dados Fiscais
+            document.getElementById('devolucoes-venda').textContent = `R$ ${(data.devolucoes_venda || 0).toFixed(2).replace('.', ',')}`;
+            document.getElementById('descontos-venda').textContent = `R$ ${(data.descontos_venda || 0).toFixed(2).replace('.', ',')}`;
+            document.getElementById('impostos-vendas').textContent = `R$ ${(data.impostos_vendas || 0).toFixed(2).replace('.', ',')}`;
+            document.getElementById('cmv-total').textContent = `R$ ${(data.cmv_total || 0).toFixed(2).replace('.', ',')}`;
+            
+            // Despesas
+            document.getElementById('despesas-administrativas').textContent = `R$ ${(data.despesas_administrativas || 0).toFixed(2).replace('.', ',')}`;
+            document.getElementById('despesas-comerciais').textContent = `R$ ${(data.despesas_comerciais || 0).toFixed(2).replace('.', ',')}`;
+            const totalDespesas = (data.despesas_administrativas || 0) + (data.despesas_comerciais || 0);
+            document.getElementById('total-despesas').textContent = `R$ ${totalDespesas.toFixed(2).replace('.', ',')}`;
         });
 }
 
@@ -261,6 +303,17 @@ function exportarRelatorio() {
             csv += `Margem de Lucro,R$ ${data.vendas_mes_atual.margem_lucro}\n`;
             csv += `Margem Média,${data.vendas_mes_atual.margem_media}%\n\n`;
             
+            csv += 'DADOS FISCAIS\n';
+            csv += `Devoluções de Venda,R$ ${data.devolucoes_venda || 0}\n`;
+            csv += `Descontos sobre Venda,R$ ${data.descontos_venda || 0}\n`;
+            csv += `Impostos sobre Vendas,R$ ${data.impostos_vendas || 0}\n`;
+            csv += `CMV Total,R$ ${data.cmv_total || 0}\n\n`;
+            
+            csv += 'DESPESAS\n';
+            csv += `Despesas Administrativas,R$ ${data.despesas_administrativas || 0}\n`;
+            csv += `Despesas Comerciais,R$ ${data.despesas_comerciais || 0}\n`;
+            csv += `Total de Despesas,R$ ${(data.despesas_administrativas || 0) + (data.despesas_comerciais || 0)}\n\n`;
+            
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -273,4 +326,4 @@ function exportarRelatorio() {
 // Carregar relatório ao abrir a página
 carregarRelatorio();
 </script>
-{% endblock %} 
+{% endblock %}

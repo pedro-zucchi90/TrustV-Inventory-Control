@@ -1,3 +1,15 @@
+# Ambiente virtual
 /.venv
+
+# Configurações sensíveis
 /config.py
+
+# Cache e arquivos temporários
 /__pycache__
+
+# Banco de dados local (não versionar)
+/instance/
+/instance/database.db
+
+# Fotos de perfil dos usuários (não versionar)
+/static/profile_pics/

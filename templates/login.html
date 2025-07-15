@@ -1,22 +1,22 @@
 {% extends 'base.html' %}
 {% block content_public %}
-<div class="container mt-5" style="max-width: 400px;">
-    <h2 class="mb-4">Entrar no Sistema</h2>
+<div class="container mt-5 login-dark" style="max-width: 400px; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.35); padding: 32px 24px;">
+    <h2 class="mb-4" style="color: #fff;">Entrar no Sistema</h2>
     <form method="POST">
         {{ form.hidden_tag() }}
         <div class="mb-3">
-            {{ form.email.label(class="form-label") }}
-            {{ form.email(class="form-control") }}
+            {{ form.email.label(class="form-label", style="color:#fff;") }}
+            {{ form.email(class="form-control", style="background:#181c24; color:#fff; border:1.5px solid #232936; border-radius:8px;") }}
         </div>
         <div class="mb-3">
-            {{ form.senha.label(class="form-label") }}
-            {{ form.senha(class="form-control") }}
+            {{ form.senha.label(class="form-label", style="color:#fff;") }}
+            {{ form.senha(class="form-control", style="background:#181c24; color:#fff; border:1.5px solid #232936; border-radius:8px;") }}
         </div>
         <div class="mb-3">
-            {{ form.submit(class="btn btn-primary w-100") }}
+            {{ form.submit(class="btn btn-primary w-100", style="background:#2563eb; border:none; color:#fff; font-weight:600; border-radius:8px;") }}
         </div>
         <div class="text-center mt-3">
-            <a href="{{ url_for('registrar') }}">Não possui conta? Cadastre-se</a>
+            <a href="{{ url_for('registrar') }}" style="color:#60a5fa;">Não possui conta? Cadastre-se</a>
         </div>
     </form>
 </div>

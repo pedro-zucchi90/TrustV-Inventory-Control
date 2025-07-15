@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-0" style="background:#ffffff; color:#2c3e50; border:1px solid #e9ecef;">
+                <div class="card-header border-0" style="background:#f8f9fa; color:#2c3e50; font-weight:700; border-bottom:1px solid #dee2e6;">
+                    <h4 class="mb-0">Registrar Devolução</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="devolucaoForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3 position-relative">
+                            {{ form.movimentacao_id.label(class="form-label fw-bold") }}
+                            <div style="position:relative;">
+                                {{ form.movimentacao_id(class="form-select pe-5", id="movimentacaoSelect") }}
+                                <i class="bi bi-caret-down-fill" style="position:absolute; right:16px; top:50%; transform:translateY(-50%); pointer-events:none; color:#6c757d; font-size:1.2rem;"></i>
+                            </div>
+                            <small class="form-text text-muted">Selecione a venda original que está sendo devolvida</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Produto</label>
+                            <div id="produtoInfo" class="form-control-plaintext" style="font-weight:600; color:#2c3e50;"></div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Quantidade Vendida Originalmente</label>
+                            <div id="quantidadeOriginal" class="form-control-plaintext" style="font-weight:600; color:#2c3e50;"></div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Valor Unitário</label>
+                            <div id="valorUnitario" class="form-control-plaintext" style="font-weight:600; color:#2c3e50;"></div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.quantidade_devolvida.label(class="form-label fw-bold") }}
+                            {{ form.quantidade_devolvida(class="form-control", id="quantidadeDevolvida") }}
+                            <small class="form-text text-muted">Quantidade que está sendo devolvida</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Valor Total a Devolver</label>
+                            <div id="valorDevolvido" class="form-control-plaintext" style="font-weight:600; color:#dc3545;"></div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.motivo_devolucao.label(class="form-label fw-bold") }}
+                            {{ form.motivo_devolucao(class="form-control") }}
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Carregar dados da movimentação selecionada
+document.getElementById('movimentacaoSelect').addEventListener('change', function() {
+    carregarDadosMovimentacao();
+});
+
+function carregarDadosMovimentacao() {
+    const movimentacaoId = document.getElementById('movimentacaoSelect').value;
+    if (movimentacaoId) {
+        fetch(`/api/movimentacao/${movimentacaoId}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('produtoInfo').textContent = data.produto;
+                document.getElementById('quantidadeOriginal').textContent = data.quantidade;
+                document.getElementById('valorUnitario').textContent = `R$ ${data.valor_unitario.toFixed(2).replace('.', ',')}`;
+                calcularValorDevolvido();
+            });
+    } else {
+        limparCampos();
+    }
+}
+
+// Calcular valor total a devolver
+document.getElementById('quantidadeDevolvida').addEventListener('input', calcularValorDevolvido);
+
+function calcularValorDevolvido() {
+    const quantidadeDevolvida = parseInt(document.getElementById('quantidadeDevolvida').value) || 0;
+    const valorUnitario = parseFloat((document.getElementById('valorUnitario').textContent || '').replace('R$ ', '').replace(',', '.')) || 0;
+    const valorTotal = quantidadeDevolvida * valorUnitario;
+    document.getElementById('valorDevolvido').textContent = `R$ ${valorTotal.toFixed(2).replace('.', ',')}`;
+}
+
+function limparCampos() {
+    document.getElementById('produtoInfo').textContent = '';
+    document.getElementById('quantidadeOriginal').textContent = '';
+    document.getElementById('valorUnitario').textContent = '';
+    document.getElementById('valorDevolvido').textContent = '';
+}
+
+// Disparar carregamento automático ao abrir a página
+window.addEventListener('DOMContentLoaded', function() {
+    carregarDadosMovimentacao();
+});
+</script>
+{% endblock %} 

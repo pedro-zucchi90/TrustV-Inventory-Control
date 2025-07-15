@@ -16,7 +16,7 @@
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             line-height: 1.6;
-            color: #2c3e50;
+            color: #1a1a1a;
             background: #ffffff;
             font-size: 12px;
         }
@@ -82,8 +82,8 @@
         
         .metric p {
             font-size: 14px;
-            color: #6c757d;
-            font-weight: 500;
+            color: #495057;
+            font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
@@ -91,7 +91,7 @@
         .section-title {
             font-size: 20px;
             font-weight: 700;
-            color: #2c3e50;
+            color: #1a1a1a;
             margin: 40px 0 20px 0;
             padding-bottom: 12px;
             border-bottom: 3px solid #1e88e5;
@@ -111,10 +111,10 @@
         
         .card-header {
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            color: #2c3e50;
+            color: #1a1a1a;
             padding: 20px 24px;
             font-size: 16px;
-            font-weight: 600;
+            font-weight: 700;
             border-bottom: 1px solid #dee2e6;
         }
         
@@ -145,8 +145,8 @@
         }
         
         .stat-label {
-            font-weight: 500;
-            color: #6c757d;
+            font-weight: 600;
+            color: #495057;
             font-size: 14px;
         }
         
@@ -159,6 +159,9 @@
         .text-success { color: #28a745; }
         .text-warning { color: #ffc107; }
         .text-danger { color: #dc3545; }
+        .text-info { color: #17a2b8; }
+        .text-purple { color: #6f42c1; }
+        .text-orange { color: #fd7e14; }
         
         .ranking-item {
             display: flex;
@@ -177,16 +180,18 @@
             background: #f8f9fa;
         }
         
-        .ranking-medal {
-            font-size: 20px;
+        .ranking-position {
+            font-size: 18px;
             width: 30px;
             text-align: center;
+            font-weight: 700;
+            color: #1e88e5;
         }
         
         .ranking-name {
             flex: 1;
-            font-weight: 500;
-            color: #2c3e50;
+            font-weight: 600;
+            color: #1a1a1a;
         }
         
         .ranking-value {
@@ -208,9 +213,9 @@
         
         .alert-section h4 {
             font-size: 16px;
-            font-weight: 600;
+            font-weight: 700;
             margin-bottom: 16px;
-            color: #2c3e50;
+            color: #1a1a1a;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -264,8 +269,8 @@
         }
         
         .categoria-nome {
-            font-weight: 500;
-            color: #2c3e50;
+            font-weight: 600;
+            color: #1a1a1a;
         }
         
         .categoria-valores {
@@ -283,8 +288,9 @@
         }
         
         .text-muted {
-            color: #6c757d;
+            color: #495057;
             font-style: italic;
+            font-weight: 500;
         }
         
         .footer {
@@ -345,7 +351,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>📊 Relatório Geral Completo</h1>
+        <h1>Relatório Geral Completo</h1>
         <div class="subtitle">Sistema de Controle de Estoque - Análise Detalhada</div>
     </div>
     
@@ -371,9 +377,9 @@
         </div>
 
         <!-- Vendas do Mês -->
-        <div class="section-title">📈 Vendas do Mês Atual</div>
+        <div class="section-title">Vendas do Mês Atual</div>
         <div class="card">
-            <div class="card-header">📊 Resumo de Vendas</div>
+            <div class="card-header">Resumo de Vendas</div>
             <div class="card-body">
                 <div class="stats-grid">
                     <div class="stats-col">
@@ -405,15 +411,15 @@
         </div>
 
         <!-- Alertas -->
-        <div class="section-title">⚠️ Alertas e Monitoramento</div>
+        <div class="section-title">Alertas e Monitoramento</div>
         <div class="card">
-            <div class="card-header">🚨 Status do Sistema</div>
+            <div class="card-header">Status do Sistema</div>
             <div class="card-body">
                 <div class="alert-grid">
                     <div class="alert-section">
-                        <h4>🔴 Estoque Baixo</h4>
+                        <h4>Estoque Baixo</h4>
                         {% if alertas.estoque_baixo|length == 0 %}
-                            <p class="text-muted">✅ Nenhum produto com estoque baixo.</p>
+                            <p class="text-muted">Nenhum produto com estoque baixo.</p>
                         {% else %}
                             {% for alerta in alertas.estoque_baixo %}
                             <div class="alert-item">
@@ -423,9 +429,9 @@
                         {% endif %}
                     </div>
                     <div class="alert-section">
-                        <h4>🟡 Estoque Alto</h4>
+                        <h4>Estoque Alto</h4>
                         {% if alertas.estoque_alto|length == 0 %}
-                            <p class="text-muted">✅ Nenhum produto com estoque excessivo.</p>
+                            <p class="text-muted">Nenhum produto com estoque excessivo.</p>
                         {% else %}
                             {% for alerta in alertas.estoque_alto %}
                             <div class="alert-item estoque-alto">
@@ -439,18 +445,16 @@
         </div>
 
         <!-- Produtos Mais Vendidos -->
-        <div class="section-title">🏆 Produtos Mais Vendidos (30 dias)</div>
+        <div class="section-title">Produtos Mais Vendidos (30 dias)</div>
         <div class="card">
-            <div class="card-header">🥇 Ranking de Vendas</div>
+            <div class="card-header">Ranking de Vendas</div>
             <div class="card-body">
                 {% if produtos_mais_vendidos|length == 0 %}
-                    <p class="text-muted">ℹ️ Nenhuma venda nos últimos 30 dias.</p>
+                    <p class="text-muted">Nenhuma venda nos últimos 30 dias.</p>
                 {% else %}
                     {% for p in produtos_mais_vendidos %}
                     <div class="ranking-item">
-                        <span class="ranking-medal">
-                            {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}.{% endif %}
-                        </span>
+                        <span class="ranking-position">{{ loop.index }}.</span>
                         <span class="ranking-name">{{ p.nome }}</span>
                         <span class="ranking-value text-primary">{{ p.quantidade }} unidades</span>
                     </div>
@@ -460,18 +464,16 @@
         </div>
 
         <!-- Top Margens -->
-        <div class="section-title">📊 Top 10 Margens de Lucro</div>
+        <div class="section-title">Top 10 Margens de Lucro</div>
         <div class="card">
-            <div class="card-header">💰 Melhores Margens</div>
+            <div class="card-header">Melhores Margens</div>
             <div class="card-body">
                 {% if produtos_margem|length == 0 %}
-                    <p class="text-muted">ℹ️ Nenhum produto com margem calculada.</p>
+                    <p class="text-muted">Nenhum produto com margem calculada.</p>
                 {% else %}
                     {% for p in produtos_margem %}
                     <div class="ranking-item">
-                        <span class="ranking-medal">
-                            {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}.{% endif %}
-                        </span>
+                        <span class="ranking-position">{{ loop.index }}.</span>
                         <span class="ranking-name">{{ p.nome }}</span>
                         <span class="ranking-value text-success">{{ "%.2f"|format(p.margem)|replace('.', ',') }}%</span>
                     </div>
@@ -481,12 +483,12 @@
         </div>
 
         <!-- Movimentações Recentes -->
-        <div class="section-title">📋 Movimentações Recentes</div>
+        <div class="section-title">Movimentações Recentes</div>
         <div class="card">
-            <div class="card-header">🔄 Últimas Transações</div>
+            <div class="card-header">Últimas Transações</div>
             <div class="card-body">
                 {% if movimentacoes_recentes|length == 0 %}
-                    <p class="text-muted">ℹ️ Nenhuma movimentação registrada.</p>
+                    <p class="text-muted">Nenhuma movimentação registrada.</p>
                 {% else %}
                     {% for m in movimentacoes_recentes %}
                     <div class="movimentacao-item">
@@ -504,12 +506,12 @@
         </div>
 
         <!-- Categorias -->
-        <div class="section-title">📂 Análise por Categoria</div>
+        <div class="section-title">Análise por Categoria</div>
         <div class="card">
-            <div class="card-header">🏷️ Resumo Categorizado</div>
+            <div class="card-header">Resumo Categorizado</div>
             <div class="card-body">
                 {% if categorias|length == 0 %}
-                    <p class="text-muted">ℹ️ Nenhuma categoria disponível.</p>
+                    <p class="text-muted">Nenhuma categoria disponível.</p>
                 {% else %}
                     {% for categoria, dados in categorias.items() %}
                     <div class="categoria-item">
@@ -524,9 +526,47 @@
             </div>
         </div>
 
+        <!-- Análise Fiscal Detalhada -->
+        <div class="section-title">Análise Fiscal Detalhada</div>
+        <div class="card">
+            <div class="card-header">Dados Fiscais</div>
+            <div class="card-body">
+                <div class="stats-grid">
+                    <div class="stats-col">
+                        <div class="stat-item">
+                            <span class="stat-label">Devoluções de Venda:</span>
+                            <span class="stat-value text-danger">R$ {{ "%.2f"|format(devolucoes_venda if devolucoes_venda is defined else 0)|replace('.', ',') }}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Descontos sobre Venda:</span>
+                            <span class="stat-value text-danger">R$ {{ "%.2f"|format(descontos_venda if descontos_venda is defined else 0)|replace('.', ',') }}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Impostos sobre Vendas:</span>
+                            <span class="stat-value text-warning">R$ {{ "%.2f"|format(impostos_vendas if impostos_vendas is defined else 0)|replace('.', ',') }}</span>
+                        </div>
+                    </div>
+                    <div class="stats-col">
+                        <div class="stat-item">
+                            <span class="stat-label">CMV Total:</span>
+                            <span class="stat-value text-purple">R$ {{ "%.2f"|format(cmv_total if cmv_total is defined else 0)|replace('.', ',') }}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Despesas Administrativas:</span>
+                            <span class="stat-value text-info">R$ {{ "%.2f"|format(despesas_administrativas if despesas_administrativas is defined else 0)|replace('.', ',') }}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Despesas Comerciais:</span>
+                            <span class="stat-value text-orange">R$ {{ "%.2f"|format(despesas_comerciais if despesas_comerciais is defined else 0)|replace('.', ',') }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="footer">
-            <p>📄 Relatório gerado automaticamente pelo Sistema de Controle de Estoque</p>
-            <p>🕒 Data de geração: {{ resumo_geral.data_relatorio }}</p>
+            <p>Relatório gerado automaticamente pelo Sistema de Controle de Estoque</p>
+            <p>Data de geração: {{ resumo_geral.data_relatorio }}</p>
         </div>
     </div>
 </body>

@@ -2,11 +2,12 @@ from flask import Flask, render_template, redirect, url_for, flash, request, Res
 import csv
 from flask_sqlalchemy import SQLAlchemy
 from models import db, Produto
-from forms_type import CadastroProdutoForm, LoginForm, MovimentacaoForm
+from forms_type import CadastroProdutoForm, LoginForm, MovimentacaoForm, DevolucaoForm
 from config import Config
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from models import Usuario
 from models import Auditoria
+from models import Devolucao
 import os
 from werkzeug.utils import secure_filename
 from models import Movimentacao
@@ -15,6 +16,13 @@ from sqlalchemy import extract
 from forms import CadastroUsuarioForm, EditarUsuarioForm
 # Removido WeasyPrint
 import pdfkit
+from config_fiscal import (
+    calcular_impostos_vendas, 
+    calcular_desconto_venda, 
+    calcular_despesas_administrativas, 
+    calcular_despesas_comerciais, 
+    calcular_cmv
+)
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -289,12 +297,36 @@ def registrar_movimentacao():
         else:
             custo_unitario = None
             valor_unitario = float(form.valor_unitario.data)
+        # Calcular automaticamente os campos fiscais
+        desconto_venda = 0.0
+        imposto_vendas = 0.0
+        cmv = 0.0
+        despesas_administrativas = 0.0
+        despesas_comerciais = 0.0
+        
+        if form.tipo.data == 'venda':
+            # Obter percentual de desconto do formulário
+            percentual_desconto = float(form.percentual_desconto.data) if form.percentual_desconto.data else 0.0
+            
+            # Calcular campos fiscais usando as funções de configuração
+            cmv = calcular_cmv(custo_unitario, form.quantidade.data)
+            imposto_vendas = calcular_impostos_vendas(valor_unitario, form.quantidade.data)
+            desconto_venda = calcular_desconto_venda(valor_unitario, form.quantidade.data, percentual_desconto)
+            despesas_administrativas = calcular_despesas_administrativas(valor_unitario, form.quantidade.data)
+            despesas_comerciais = calcular_despesas_comerciais(valor_unitario, form.quantidade.data)
+        
         mov = Movimentacao(
             produto_id=form.produto_id.data,
             tipo=form.tipo.data,
             quantidade=form.quantidade.data,
             valor_unitario=valor_unitario,
-            custo_unitario=custo_unitario
+            custo_unitario=custo_unitario,
+            percentual_desconto=percentual_desconto if form.tipo.data == 'venda' else 0.0,
+            desconto_venda=desconto_venda,
+            imposto_vendas=imposto_vendas,
+            cmv=cmv,
+            despesas_administrativas=despesas_administrativas,
+            despesas_comerciais=despesas_comerciais
         )
         if form.tipo.data == 'compra':
             produto.quantidade_estoque += form.quantidade.data
@@ -328,7 +360,22 @@ def relatorio_fiscal():
         # Usar sempre o custo_unitario salvo na movimentação, nunca o preco_compra atual
         custo = venda.custo_unitario if venda.custo_unitario is not None else 0
         margem_lucro += (venda.valor_unitario - custo) * venda.quantidade
-    return render_template('relatorio_fiscal.html', vendas=vendas, margem_lucro=margem_lucro)
+    
+    # Cálculo dos novos campos fiscais
+    total_descontos = sum(v.desconto_venda for v in vendas)
+    total_impostos = sum(v.imposto_vendas for v in vendas)
+    total_cmv = sum(v.cmv for v in vendas)
+    despesas_administrativas = sum(v.despesas_administrativas for v in vendas)
+    despesas_comerciais = sum(v.despesas_comerciais for v in vendas)
+    
+    return render_template('relatorio_fiscal.html', 
+                         vendas=vendas, 
+                         margem_lucro=margem_lucro,
+                         total_descontos=total_descontos,
+                         total_impostos=total_impostos,
+                         total_cmv=total_cmv,
+                         despesas_administrativas=despesas_administrativas,
+                         despesas_comerciais=despesas_comerciais)
 
 @app.route('/exportar_relatorio_fiscal')
 @login_required
@@ -337,24 +384,60 @@ def exportar_relatorio_fiscal():
     ano = datetime.now().year
     vendas = Movimentacao.query.filter_by(tipo='venda').filter(extract('month', Movimentacao.data)==mes, extract('year', Movimentacao.data)==ano).all()
     def generate():
-        data = [['Data', 'Produto', 'Quantidade', 'Valor Unitário (Venda)', 'Custo Salvo', 'Margem de Lucro']]
+        data = [['Data', 'Tipo', 'Produto', 'Quantidade', 'Valor Unitário', 'Custo Unitário', '% Desconto', 'Desconto', 'Impostos', 'CMV', 'Margem de Lucro']]
         for venda in vendas:
             produto = Produto.query.get(venda.produto_id)
             custo = venda.custo_unitario if venda.custo_unitario is not None else 0
             linha = [
                 venda.data.strftime('%d/%m/%Y %H:%M'),
+                venda.tipo.title(),
                 produto.nome,
                 venda.quantidade,
                 venda.valor_unitario,
                 custo,
+                f"{venda.percentual_desconto:.1f}%",
+                venda.desconto_venda,
+                venda.imposto_vendas,
+                venda.cmv,
                 (venda.valor_unitario - custo) * venda.quantidade
             ]
             data.append(linha)
+        
+        # Adicionar resumo fiscal
+        total_descontos = sum(v.desconto_venda for v in vendas)
+        total_impostos = sum(v.imposto_vendas for v in vendas)
+        total_cmv = sum(v.cmv for v in vendas)
+        despesas_administrativas = sum(v.despesas_administrativas for v in vendas)
+        despesas_comerciais = sum(v.despesas_comerciais for v in vendas)
+        
+        data.append([])  # Linha em branco
+        data.append(['RESUMO FISCAL'])
+        data.append(['Total de Descontos', total_descontos])
+        data.append(['Total de Impostos', total_impostos])
+        data.append(['CMV Total', total_cmv])
+        data.append(['Despesas Administrativas', despesas_administrativas])
+        data.append(['Despesas Comerciais', despesas_comerciais])
+        
         output = ''
         for row in data:
             output += ';'.join(map(str, row)) + '\n'
         return output
     return Response(generate(), mimetype='text/csv', headers={"Content-Disposition": "attachment;filename=relatorio_fiscal.csv"})
+
+def calcular_campos_fiscais_automaticamente():
+    """Calcula automaticamente os campos fiscais para movimentações existentes"""
+    vendas = Movimentacao.query.filter_by(tipo='venda').all()
+    
+    for venda in vendas:
+        # Calcular campos fiscais usando as funções de configuração
+        venda.cmv = calcular_cmv(venda.custo_unitario, venda.quantidade)
+        venda.imposto_vendas = calcular_impostos_vendas(venda.valor_unitario, venda.quantidade)
+        venda.desconto_venda = calcular_desconto_venda(venda.valor_unitario, venda.quantidade, venda.percentual_desconto)
+        venda.despesas_administrativas = calcular_despesas_administrativas(venda.valor_unitario, venda.quantidade)
+        venda.despesas_comerciais = calcular_despesas_comerciais(venda.valor_unitario, venda.quantidade)
+    
+    db.session.commit()
+    print(f"Campos fiscais calculados para {len(vendas)} vendas")
 
 @app.context_processor
 def inject_alertas_fiscais():
@@ -365,6 +448,17 @@ def inject_alertas_fiscais():
         if venda.valor_unitario < produto.preco_compra:
             alertas.append(f"Venda do produto '{produto.nome}' abaixo do custo em {venda.data.strftime('%d/%m/%Y')}")
     return dict(alertas_fiscais=alertas)
+
+@app.route('/recalcular_fiscais')
+@login_required
+def recalcular_fiscais():
+    """Rota para recalcular campos fiscais manualmente"""
+    try:
+        calcular_campos_fiscais_automaticamente()
+        flash('Campos fiscais recalculados com sucesso!', 'success')
+    except Exception as e:
+        flash(f'Erro ao recalcular campos fiscais: {e}', 'danger')
+    return redirect(url_for('relatorio_fiscal'))
 
 @app.route('/auditoria')
 @login_required
@@ -799,6 +893,14 @@ def api_relatorio_geral_completo():
         categorias[categoria]['quantidade'] += produto.quantidade_estoque
         categorias[categoria]['valor'] += produto.quantidade_estoque * produto.preco_compra
     
+    # Cálculo dos novos campos fiscais
+    devolucoes_venda = sum(m.desconto_venda for m in movimentacoes if m.tipo == 'devolucao')
+    descontos_venda = sum(m.desconto_venda for m in movimentacoes if m.tipo == 'venda')
+    impostos_vendas = sum(m.imposto_vendas for m in movimentacoes if m.tipo == 'venda')
+    cmv_total = sum(m.cmv for m in movimentacoes if m.tipo == 'venda')
+    despesas_administrativas = sum(m.despesas_administrativas for m in movimentacoes)
+    despesas_comerciais = sum(m.despesas_comerciais for m in movimentacoes)
+
     return jsonify({
         'resumo_geral': {
             'total_produtos': total_produtos,
@@ -831,7 +933,13 @@ def api_relatorio_geral_completo():
                 'valor_unitario': m.valor_unitario
             } for m in movimentacoes_recentes
         ],
-        'categorias': categorias
+        'categorias': categorias,
+        'devolucoes_venda': round(devolucoes_venda, 2),
+        'descontos_venda': round(descontos_venda, 2),
+        'impostos_vendas': round(impostos_vendas, 2),
+        'cmv_total': round(cmv_total, 2),
+        'despesas_administrativas': round(despesas_administrativas, 2),
+        'despesas_comerciais': round(despesas_comerciais, 2)
     })
 
 @app.route('/relatorio_geral_completo/pdf')
@@ -880,6 +988,14 @@ def relatorio_geral_pdf():
             categorias[categoria] = {'quantidade': 0, 'valor': 0}
         categorias[categoria]['quantidade'] += produto.quantidade_estoque
         categorias[categoria]['valor'] += produto.quantidade_estoque * produto.preco_compra
+    # Cálculo dos novos campos fiscais para PDF
+    devolucoes_venda = sum(m.desconto_venda for m in movimentacoes if m.tipo == 'devolucao')
+    descontos_venda = sum(m.desconto_venda for m in movimentacoes if m.tipo == 'venda')
+    impostos_vendas = sum(m.imposto_vendas for m in movimentacoes if m.tipo == 'venda')
+    cmv_total = sum(m.cmv for m in movimentacoes if m.tipo == 'venda')
+    despesas_administrativas = sum(m.despesas_administrativas for m in movimentacoes)
+    despesas_comerciais = sum(m.despesas_comerciais for m in movimentacoes)
+
     # --- Montar contexto ---
     context = {
         'resumo_geral': {
@@ -911,7 +1027,13 @@ def relatorio_geral_pdf():
                 'valor_unitario': m.valor_unitario
             } for m in movimentacoes_recentes
         ],
-        'categorias': categorias
+        'categorias': categorias,
+        'devolucoes_venda': round(devolucoes_venda, 2),
+        'descontos_venda': round(descontos_venda, 2),
+        'impostos_vendas': round(impostos_vendas, 2),
+        'cmv_total': round(cmv_total, 2),
+        'despesas_administrativas': round(despesas_administrativas, 2),
+        'despesas_comerciais': round(despesas_comerciais, 2)
     }
     html = render_template('relatorio_geral_pdf.html', **context)
     # Caminho manual do wkhtmltopdf para Windows
@@ -942,7 +1064,100 @@ def relatorio_geral_pdf():
     response.headers['Content-Disposition'] = 'attachment; filename=relatorio_geral_completo.pdf'
     return response
 
+# ===== SISTEMA DE DEVOLUÇÃO =====
+
+@app.route('/devolucoes')
+@login_required
+def listar_devolucoes():
+    """Lista todas as devoluções registradas"""
+    devolucoes = Devolucao.query.order_by(Devolucao.data_devolucao.desc()).all()
+    total_devolvido = sum(d.valor_devolvido for d in devolucoes)
+    total_quantidade = sum(d.quantidade_devolvida for d in devolucoes)
+    
+    return render_template('devolucoes.html', 
+                         devolucoes=devolucoes,
+                         total_devolvido=total_devolvido,
+                         total_quantidade=total_quantidade)
+
+@app.route('/registrar_devolucao', methods=['GET', 'POST'])
+@login_required
+def registrar_devolucao():
+    """Registra uma nova devolução"""
+    form = DevolucaoForm()
+    
+    # Carregar apenas vendas para o formulário
+    vendas = Movimentacao.query.filter_by(tipo='venda').order_by(Movimentacao.data.desc()).all()
+    form.movimentacao_id.choices = [(v.id, f"{v.produto.nome} - {v.data.strftime('%d/%m/%Y')} - Qtd: {v.quantidade}") for v in vendas]
+    
+    if form.validate_on_submit():
+        # Buscar a movimentação original
+        movimentacao = Movimentacao.query.get(form.movimentacao_id.data)
+        
+        if not movimentacao:
+            flash('Venda não encontrada!', 'danger')
+            return redirect(url_for('registrar_devolucao'))
+        
+        # Validar quantidade
+        if form.quantidade_devolvida.data > movimentacao.quantidade:
+            flash('Quantidade devolvida não pode ser maior que a quantidade vendida!', 'danger')
+            return redirect(url_for('registrar_devolucao'))
+        
+        # Calcular valor devolvido
+        valor_devolvido = form.quantidade_devolvida.data * movimentacao.valor_unitario
+        
+        # Criar registro de devolução
+        devolucao = Devolucao(
+            movimentacao_id=movimentacao.id,
+            produto_id=movimentacao.produto_id,
+            quantidade_devolvida=form.quantidade_devolvida.data,
+            motivo_devolucao=form.motivo_devolucao.data,
+            valor_devolvido=valor_devolvido,
+            usuario_id=current_user.id
+        )
+        
+        # Atualizar estoque do produto
+        produto = Produto.query.get(movimentacao.produto_id)
+        produto.quantidade_estoque += form.quantidade_devolvida.data
+        
+        # Registrar auditoria
+        auditoria = Auditoria(
+            usuario_id=current_user.id,
+            acao='Devolução',
+            entidade='Produto',
+            entidade_id=produto.id,
+            detalhes=f'Devolução de {form.quantidade_devolvida.data} unidade(s) do produto {produto.nome}. Motivo: {form.motivo_devolucao.data}'
+        )
+        
+        db.session.add(devolucao)
+        db.session.add(auditoria)
+        db.session.commit()
+        
+        flash('Devolução registrada com sucesso!', 'success')
+        return redirect(url_for('listar_devolucoes'))
+    
+    return render_template('registrar_devolucao.html', form=form)
+
+@app.route('/api/movimentacao/<int:movimentacao_id>')
+@login_required
+def api_movimentacao_detalhes(movimentacao_id):
+    """API para obter detalhes de uma movimentação específica"""
+    movimentacao = Movimentacao.query.get(movimentacao_id)
+    if not movimentacao:
+        return jsonify({'error': 'Movimentação não encontrada'}), 404
+    
+    return jsonify({
+        'produto': movimentacao.produto.nome,
+        'quantidade': movimentacao.quantidade,
+        'valor_unitario': movimentacao.valor_unitario,
+        'data': movimentacao.data.strftime('%d/%m/%Y %H:%M')
+    })
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+        # Calcular campos fiscais automaticamente na primeira execução
+        try:
+            calcular_campos_fiscais_automaticamente()
+        except Exception as e:
+            print(f"Erro ao calcular campos fiscais: {e}")
     app.run(debug=True)

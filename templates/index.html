@@ -22,8 +22,7 @@
     <div class="grafico-header">
         <span class="fw-bold">Evolução da Margem de Lucro (Últimos 6 meses)</span>
         <div>
-            <a href="{{ url_for('relatorio_fiscal') }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-download"></i> Exportar Gráfico</a>
-            <a href="{{ url_for('relatorio_fiscal') }}" class="btn btn-primary btn-sm"><i class="bi bi-search"></i> Detalhar por Produto</a>
+            <a href="{{ url_for('relatorio_fiscal') }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-download"></i> Exportar Relatório</a>
         </div>
     </div>
     <canvas id="grafico-lucro" height="80"></canvas>
@@ -88,38 +87,38 @@
             <div class="fw-bold mb-2">Ações Rápidas</div>
             <div class="row g-3">
                 <div class="col-6 col-md-3">
-                    <a href="{{ url_for('adicionar_produto') }}" class="btn btn-outline-primary w-100 mb-2">
-                        <i class="bi bi-plus-circle"></i> Cadastrar Produto
+                    <a href="{{ url_for('adicionar_produto') }}" class="btn-acao btn btn-outline-primary w-100 mb-2">
+                        <i class="bi bi-plus-circle"></i> <span class="text">Cadastrar Produto</span>
                     </a>
                 </div>
                 <div class="col-6 col-md-3">
-                    <a href="{{ url_for('registrar_movimentacao', tipo='compra') }}" class="btn btn-outline-primary w-100 mb-2">
-                        <i class="bi bi-cart-plus"></i> Registrar Compra
+                    <a href="{{ url_for('registrar_movimentacao', tipo='compra') }}" class="btn-acao btn btn-outline-primary w-100 mb-2">
+                        <i class="bi bi-cart-plus"></i> <span class="text">Registrar Compra</span>
                     </a>
                 </div>
                 <div class="col-6 col-md-3">
-                    <a href="{{ url_for('registrar_movimentacao', tipo='venda') }}" class="btn btn-outline-primary w-100 mb-2">
-                        <i class="bi bi-cart-check"></i> Registrar Venda
+                    <a href="{{ url_for('registrar_movimentacao', tipo='venda') }}" class="btn-acao btn btn-outline-primary w-100 mb-2">
+                        <i class="bi bi-cart-check"></i> <span class="text">Registrar Venda</span>
                     </a>
                 </div>
                 <div class="col-6 col-md-3">
-                    <a href="{{ url_for('relatorio_fiscal') }}" class="btn btn-outline-primary w-100 mb-2">
-                        <i class="bi bi-file-earmark-bar-graph"></i> Gerar Relatório
+                    <a href="{{ url_for('relatorio_fiscal') }}" class="btn-acao btn btn-outline-primary w-100 mb-2">
+                        <i class="bi bi-file-earmark-bar-graph"></i> <span class="text">Relatório Fiscal</span>
                     </a>
                 </div>
                 <div class="col-6 col-md-3">
-                    <a href="{{ url_for('inventario') }}" class="btn btn-funcionalidade w-100 mb-2">
-                        <i class="bi bi-box-seam"></i> Inventário
+                    <a href="{{ url_for('inventario') }}" class="btn-acao btn btn-funcionalidade w-100 mb-2">
+                        <i class="bi bi-box-seam"></i> <span class="text">Inventário</span>
                     </a>
                 </div>
                 <div class="col-6 col-md-3">
-                    <a href="{{ url_for('previsao_demanda') }}" class="btn btn-funcionalidade w-100 mb-2">
-                        <i class="bi bi-graph-up"></i> Previsão de Demanda
+                    <a href="{{ url_for('previsao_demanda') }}" class="btn-acao btn btn-funcionalidade w-100 mb-2">
+                        <i class="bi bi-graph-up"></i> <span class="text">Previsão de Demanda</span>
                     </a>
                 </div>
                 <div class="col-6 col-md-3">
-                    <a href="{{ url_for('relatorio_geral_completo') }}" class="btn btn-funcionalidade w-100 mb-2">
-                        <i class="bi bi-file-earmark-text"></i> Relatório Completo
+                    <a href="{{ url_for('relatorio_geral_completo') }}" class="btn-acao btn btn-funcionalidade w-100 mb-2">
+                        <i class="bi bi-file-earmark-text"></i> <span class="text">Relatório Completo</span>
                     </a>
                 </div>
             </div>
