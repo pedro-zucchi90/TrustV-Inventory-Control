@@ -88,6 +88,8 @@ O TrustV Inventory Control é um sistema de gestão de inventário e controle fi
 - API para preço médio dos produtos e preço médio geral
 - Sistema de devolução de vendas integrado ao estoque
 - Interface web responsiva e moderna
+- **Navegação facilitada entre movimentações e devoluções**: Agora é possível acessar rapidamente a tela de devoluções a partir da tela de movimentações, com ajuste do endpoint para evitar erros de navegação.
+- **Melhorias de usabilidade**: Ajustes em botões, tabelas e navegação para tornar o sistema mais intuitivo e eficiente.
 
 ## Usabilidade e Visual
 - **Botões de ação rápida**: Centralizados, com tamanho consistente, espaçamento equilibrado entre ícone e texto, e largura adaptável ao grid. O texto é automaticamente reduzido se for muito longo, mantendo o layout limpo.
