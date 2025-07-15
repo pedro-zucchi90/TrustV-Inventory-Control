@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Auditoria do Sistema</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Usuário</th>
+                <th>Ação</th>
+                <th>Entidade</th>
+                <th>ID Entidade</th>
+                <th>Detalhes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td>{{ log.data.strftime('%d/%m/%Y %H:%M') }}</td>
+                <td>{{ log.usuario.nome if log.usuario else 'N/A' }}</td>
+                <td>{{ log.acao }}</td>
+                <td>{{ log.entidade }}</td>
+                <td>{{ log.entidade_id }}</td>
+                <td>{{ log.detalhes }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %} 

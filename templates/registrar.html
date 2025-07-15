@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block content_public %}
+<div class="container mt-5" style="max-width: 400px;">
+    <h2 class="mb-4">Criar nova conta</h2>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+            {{ form.nome.label(class="form-label") }}
+            {{ form.nome(class="form-control") }}
+            {% for error in form.nome.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="mb-3">
+            {{ form.email.label(class="form-label") }}
+            {{ form.email(class="form-control") }}
+            {% for error in form.email.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="mb-3">
+            {{ form.senha.label(class="form-label") }}
+            {{ form.senha(class="form-control") }}
+            {% for error in form.senha.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="mb-3">
+            {{ form.confirmar_senha.label(class="form-label") }}
+            {{ form.confirmar_senha(class="form-control") }}
+            {% for error in form.confirmar_senha.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="mb-3">
+            {{ form.submit(class="btn btn-primary w-100") }}
+        </div>
+        <div class="text-center">
+            <a href="{{ url_for('login') }}">Já possui conta? Entrar</a>
+        </div>
+    </form>
+</div>
+{% endblock content_public %} 

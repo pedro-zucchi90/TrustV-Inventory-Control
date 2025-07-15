@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Previsão de Demanda</h2>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>Previsão Mensal</th>
+                </tr>
+            </thead>
+            <tbody id="previsao-tbody">
+                <tr><td colspan="3" class="text-center">Carregando...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>
+fetch('/api/previsao_demanda')
+  .then(resp => resp.json())
+  .then(data => {
+    const tbody = document.getElementById('previsao-tbody');
+    tbody.innerHTML = '';
+    if(data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" class="text-center">Nenhum dado de previsão encontrado.</td></tr>';
+    } else {
+      data.forEach(p => {
+        tbody.innerHTML += `<tr><td>${p.id}</td><td>${p.nome}</td><td>${p.previsao_mensal}</td></tr>`;
+      });
+    }
+  });
+</script>
+{% endblock %} 

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema Fiscal{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    {% if current_user.is_authenticated %}
+    <div class="sidebar">
+        <div class="logo">TrustV Inventory Control</div>
+        <nav style="position: relative;">
+            <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}active nav-current{% endif %}"><i class="bi bi-speedometer2"></i> Dashboard</a>
+            <a href="{{ url_for('listar_produtos') }}" class="{% if request.endpoint == 'listar_produtos' %}active nav-current{% endif %}"><i class="bi bi-box-seam"></i> Produtos</a>
+            <a href="{{ url_for('registrar_movimentacao', tipo='compra') }}" class="{% if request.endpoint == 'registrar_movimentacao' and request.args.get('tipo') == 'compra' %}active nav-current{% endif %}"><i class="bi bi-cart-plus"></i> Compras</a>
+            <a href="{{ url_for('registrar_movimentacao', tipo='venda') }}" class="{% if request.endpoint == 'registrar_movimentacao' and request.args.get('tipo') == 'venda' %}active nav-current{% endif %}"><i class="bi bi-cart-check"></i> Vendas</a>
+            <a href="{{ url_for('listar_movimentacoes') }}" class="{% if request.endpoint == 'listar_movimentacoes' %}active nav-current{% endif %}"><i class="bi bi-clock-history"></i> Histórico de Movimentações</a>
+            <a href="{{ url_for('relatorio_fiscal') }}" class="{% if request.endpoint == 'relatorio_fiscal' %}active nav-current{% endif %}"><i class="bi bi-file-earmark-bar-graph"></i> Relatório Geral</a>
+            <a href="{{ url_for('relatorio_geral_completo') }}" class="{% if request.endpoint == 'relatorio_geral_completo' %}active nav-current{% endif %}"><i class="bi bi-file-earmark-text"></i> Relatório Completo</a>
+        </nav>
+        <!-- Removido o botão Minha Conta -->
+        <form action="{{ url_for('logout') }}" method="post" class="mt-auto">
+            <button type="submit" class="logout"><i class="bi bi-box-arrow-left"></i> Sair</button>
+        </form>
+    </div>
+    <div class="main" style="margin-left:230px; min-height:100vh;">
+        <div class="topbar" style="position:relative;">
+            <div style="position:absolute; right:32px; top:50%; transform:translateY(-50%);">
+                <div class="user">
+                    <a href="{{ url_for('editar_conta') }}" class="d-flex align-items-center text-decoration-none" style="gap: 12px; color: inherit;">
+                        <img src="{{ url_for('static', filename=current_user.foto_perfil) if current_user.is_authenticated and current_user.foto_perfil else 'https://ui-avatars.com/api/?name=' + (current_user.nome if current_user.is_authenticated else 'Usuário') }}" class="avatar" alt="Avatar">
+                        <div>
+                            <div class="name">{{ current_user.nome if current_user.is_authenticated else 'Visitante' }}</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                </div>
+            {% endfor %}
+                {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+        </div>
+    </div>
+    {% else %}
+    <div class="d-flex flex-column justify-content-center align-items-center min-vh-100" style="background:#0f1419;">
+        <div class="w-100" style="max-width: 400px;">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            {% block content_public %}{% endblock %}
+        </div>
+    </div>
+    {% endif %}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    // Animação nav-indicator
+    function moveNavIndicator() {
+        const nav = document.querySelector('.sidebar nav');
+        const indicator = document.querySelector('.nav-indicator');
+        const active = nav.querySelector('.nav-current');
+        if (active && indicator) {
+            indicator.style.display = 'block';
+            const rect = active.getBoundingClientRect();
+            const navRect = nav.getBoundingClientRect();
+            indicator.style.top = (active.offsetTop) + 'px';
+            indicator.style.height = active.offsetHeight + 'px';
+            indicator.style.width = 'calc(100% - 8px)';
+            indicator.style.left = '4px';
+        } else if (indicator) {
+            indicator.style.display = 'none';
+        }
+    }
+    window.addEventListener('DOMContentLoaded', moveNavIndicator);
+    window.addEventListener('resize', moveNavIndicator);
+    // Para SPA, você usaria popstate/hashchange, mas para Flask recarrega, então só precisa no load/resize
+    </script>
+</body>
+</html>

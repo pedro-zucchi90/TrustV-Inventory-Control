@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5" style="max-width: 600px;">
+    <h2 class="mb-4">Editar Produto</h2>
+    <form method="POST">
+                    {{ form.hidden_tag() }}
+        <div class="mb-3">
+            {{ form.nome.label(class="form-label") }}
+            {{ form.nome(class="form-control", value=produto.nome) }}
+                    </div>
+        <div class="mb-3">
+            {{ form.descricao.label(class="form-label") }}
+            {{ form.descricao(class="form-control", value=produto.descricao) }}
+                    </div>
+        <div class="mb-3">
+            {{ form.preco_compra.label(class="form-label") }}
+            {{ form.preco_compra(class="form-control", value=produto.preco_compra) }}
+                    </div>
+        <div class="mb-3">
+            {{ form.preco_venda.label(class="form-label") }}
+            {{ form.preco_venda(class="form-control", value=produto.preco_venda) }}
+                    </div>
+        <div class="mb-3">
+            {{ form.quantidade_estoque.label(class="form-label") }}
+            {{ form.quantidade_estoque(class="form-control", value=produto.quantidade_estoque) }}
+                    </div>
+        <div class="mb-3">
+            {{ form.submit(class="btn btn-primary w-100") }}
+        </div>
+    </form>
+</div>
+{% endblock %}

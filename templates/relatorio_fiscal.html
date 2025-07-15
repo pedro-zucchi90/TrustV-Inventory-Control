@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-4">Relatório Fiscal do Mês</h2>
+        <div>
+            <a href="{{ url_for('exportar_relatorio_fiscal') }}" class="btn btn-outline-primary">Exportar Relatório CSV</a>
+            <a href="{{ url_for('relatorio_estoque') }}" class="btn btn-outline-success ms-2">Relatório de Estoque</a>
+        </div>
+    </div>
+    {% if alertas_fiscais %}
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+        {% for alerta in alertas_fiscais %}
+            <li>{{ alerta }}</li>
+        {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Produto</th>
+                <th>Quantidade</th>
+                <th>Valor Unitário (Venda)</th>
+                <th>Custo na Venda</th>
+                <th>Margem de Lucro</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for venda in vendas %}
+            <tr>
+                <td>{{ venda.data.strftime('%d/%m/%Y %H:%M') }}</td>
+                <td>{{ venda.produto.nome }}</td>
+                <td>{{ venda.quantidade }}</td>
+                <td>R$ {{ venda.valor_unitario }}</td>
+                <td>R$ {{ venda.custo_unitario if venda.custo_unitario is not none else 0 }}</td>
+                <td>R$ {{ (venda.valor_unitario - (venda.custo_unitario if venda.custo_unitario is not none else 0)) * venda.quantidade }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="alert alert-info mt-4">
+        <strong>Margem de Lucro Total do Mês:</strong> R$ {{ margem_lucro }}
+    </div>
+</div>
+{% endblock %} 

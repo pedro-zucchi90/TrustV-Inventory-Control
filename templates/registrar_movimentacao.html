@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5" style="max-width: 500px;">
+    <h2 class="mb-4">Registrar Movimentação</h2>
+    <form method="POST" id="movForm">
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+            {{ form.produto_id.label(class="form-label") }}
+            {{ form.produto_id(class="form-select") }}
+        </div>
+        <div class="mb-3">
+            {{ form.tipo.label(class="form-label") }}
+            {{ form.tipo(class="form-select", id="tipoSelect") }}
+        </div>
+        <div class="mb-3">
+            {{ form.quantidade.label(class="form-label") }}
+            {{ form.quantidade(class="form-control") }}
+        </div>
+        <div class="mb-3" id="campo-compra" style="display: none;">
+            {{ form.valor_unitario.label(class="form-label") }}
+            {{ form.valor_unitario(class="form-control") }}
+        </div>
+        <div class="mb-3" id="campo-venda" style="display: none;">
+            {{ form.valor_venda.label(class="form-label") }}
+            {{ form.valor_venda(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.submit(class="btn btn-primary w-100") }}
+        </div>
+    </form>
+</div>
+<script>
+    function toggleCampos() {
+        var tipo = document.querySelector('[name="tipo"]').value;
+        document.getElementById('campo-compra').style.display = tipo === 'compra' ? '' : 'none';
+        document.getElementById('campo-venda').style.display = tipo === 'venda' ? '' : 'none';
+    }
+    document.querySelector('[name="tipo"]').addEventListener('change', toggleCampos);
+    window.onload = toggleCampos;
+</script>
+{% endblock %} 

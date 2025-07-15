@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Relatório Geral de Estoque</h2>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>Estoque</th>
+                    <th>Preço de Compra</th>
+                    <th>Preço de Venda</th>
+                    <th>Custo Total</th>
+                </tr>
+            </thead>
+            <tbody id="relatorio-tbody">
+                <tr><td colspan="6" class="text-center">Carregando...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>
+fetch('/api/relatorio_estoque')
+  .then(resp => resp.json())
+  .then(data => {
+    const tbody = document.getElementById('relatorio-tbody');
+    tbody.innerHTML = '';
+    if(data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center">Nenhum produto encontrado.</td></tr>';
+    } else {
+      data.forEach(p => {
+        tbody.innerHTML += `<tr><td>${p.id}</td><td>${p.nome}</td><td>${p.quantidade_estoque}</td><td>R$ ${p.preco_compra.toFixed(2).replace('.', ',')}</td><td>R$ ${p.preco_venda.toFixed(2).replace('.', ',')}</td><td>R$ ${p.custo_total.toFixed(2).replace('.', ',')}</td></tr>`;
+      });
+    }
+  });
+</script>
+{% endblock %} 

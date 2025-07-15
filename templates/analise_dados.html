@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Análise de Dados do Estoque</h2>
+    </div>
+    <div id="analise-metricas" class="mb-4">Carregando...</div>
+</div>
+<script>
+fetch('/api/analise_estoque')
+  .then(resp => resp.json())
+  .then(data => {
+    document.getElementById('analise-metricas').innerHTML = `
+      <div class='alert alert-primary'>
+        <b>Total em Estoque:</b> ${data.total_estoque} itens<br>
+        <b>Valor Total em Estoque:</b> R$ ${data.valor_estoque.toFixed(2).replace('.', ',')}
+      </div>
+    `;
+  });
+</script>
+{% endblock %} 

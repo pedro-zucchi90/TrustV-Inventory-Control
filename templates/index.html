@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="cards">
+    <div class="card-indicador estoque">
+        <div class="icon"><i class="bi bi-box-seam"></i></div>
+        <div class="valor">{{ total_estoque }} <span class="desc">itens</span></div>
+        <div class="desc">Estoque Atual</div>
+    </div>
+    <div class="card-indicador valor">
+        <div class="icon"><i class="bi bi-currency-dollar"></i></div>
+        <div class="valor">R$ {{ valor_estoque|float|round(2)|replace('.', ',') }}</div>
+        <div class="desc">Valor em Estoque</div>
+    </div>
+    <div class="card-indicador lucro">
+        <div class="icon"><i class="bi bi-graph-up-arrow"></i></div>
+        <div class="valor">R$ {{ margem_lucro|float|round(2)|replace('.', ',') }}</div>
+        <div class="desc">Margem de Lucro do Mês</div>
+    </div>
+
+</div>
+<div class="grafico-box">
+    <div class="grafico-header">
+        <span class="fw-bold">Evolução da Margem de Lucro (Últimos 6 meses)</span>
+        <div>
+            <a href="{{ url_for('relatorio_fiscal') }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-download"></i> Exportar Gráfico</a>
+            <a href="{{ url_for('relatorio_fiscal') }}" class="btn btn-primary btn-sm"><i class="bi bi-search"></i> Detalhar por Produto</a>
+        </div>
+    </div>
+    <canvas id="grafico-lucro" height="80"></canvas>
+</div>
+<div class="table-box mb-4">
+    <div class="fw-bold mb-2">Produtos com Divergência Fiscal</div>
+    <table>
+        <thead>
+            <tr>
+                <th>PRODUTO</th>
+                <th>CUSTO ÚLTIMA COMPRA</th>
+                <th>CUSTO MÉDIO</th>
+                <th>PREÇO DE VENDA</th>
+                <th>DIVERGÊNCIA</th>
+                <th>AÇÃO</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for d in divergencias %}
+            <tr>
+                <td>{{ d.produto }}</td>
+                <td>R$ {{ d.custo_ultima|float|round(2)|replace('.', ',') }}</td>
+                <td>R$ {{ d.custo_medio|float|round(2)|replace('.', ',') }}</td>
+                <td>R$ {{ d.preco_venda|float|round(2)|replace('.', ',') }}</td>
+                <td class="divergencia">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    {% if d.tipo == 'compra_diferente' %}
+                        <br><span style="font-size:0.95em;">Diferença compra: R$ {{ d.diferenca_compra|float|round(2)|replace('.', ',') }}<br>(Penúltima: R$ {{ d.custo_penultima|float|round(2)|replace('.', ',') }})</span>
+                    {% endif %}
+                </td>
+                <td><a href="{{ url_for('editar_produto', produto_id=d.id) }}" class="btn btn-primary btn-sm">Corrigir</a></td>
+            </tr>
+        {% else %}
+        <tr><td colspan="6" class="text-center">Nenhuma divergência fiscal encontrada.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="table-box">
+            <div class="fw-bold mb-2">Últimas Transações</div>
+            <div class="d-flex flex-column gap-2">
+                {% for mov in ultimas_transacoes %}
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="{% if mov.tipo == 'compra' %}text-success{% else %}text-danger{% endif %}">
+                        <i class="bi bi-arrow-{% if mov.tipo == 'compra' %}down{% else %}up{% endif %}-circle"></i>
+                        {{ mov.tipo|capitalize }} - {{ mov.produto.nome }}<br><small>{{ mov.data.strftime('%d/%m/%Y') }} - {{ mov.quantidade }} unidades</small>
+                    </span>
+                    <span class="fw-bold">
+                        {% if mov.tipo == 'venda' %}+ {% endif %}R$ {{ (mov.valor_unitario * mov.quantidade)|float|round(2)|replace('.', ',') }}
+                    </span>
+                </div>
+                {% else %}
+                <div class="text-center text-muted">Nenhuma transação recente.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="table-box">
+            <div class="fw-bold mb-2">Ações Rápidas</div>
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <a href="{{ url_for('adicionar_produto') }}" class="btn btn-outline-primary w-100 mb-2">
+                        <i class="bi bi-plus-circle"></i> Cadastrar Produto
+                    </a>
+                </div>
+                <div class="col-6 col-md-3">
+                    <a href="{{ url_for('registrar_movimentacao', tipo='compra') }}" class="btn btn-outline-primary w-100 mb-2">
+                        <i class="bi bi-cart-plus"></i> Registrar Compra
+                    </a>
+                </div>
+                <div class="col-6 col-md-3">
+                    <a href="{{ url_for('registrar_movimentacao', tipo='venda') }}" class="btn btn-outline-primary w-100 mb-2">
+                        <i class="bi bi-cart-check"></i> Registrar Venda
+                    </a>
+                </div>
+                <div class="col-6 col-md-3">
+                    <a href="{{ url_for('relatorio_fiscal') }}" class="btn btn-outline-primary w-100 mb-2">
+                        <i class="bi bi-file-earmark-bar-graph"></i> Gerar Relatório
+                    </a>
+                </div>
+                <div class="col-6 col-md-3">
+                    <a href="{{ url_for('inventario') }}" class="btn btn-funcionalidade w-100 mb-2">
+                        <i class="bi bi-box-seam"></i> Inventário
+                    </a>
+                </div>
+                <div class="col-6 col-md-3">
+                    <a href="{{ url_for('previsao_demanda') }}" class="btn btn-funcionalidade w-100 mb-2">
+                        <i class="bi bi-graph-up"></i> Previsão de Demanda
+                    </a>
+                </div>
+                <div class="col-6 col-md-3">
+                    <a href="{{ url_for('relatorio_geral_completo') }}" class="btn btn-funcionalidade w-100 mb-2">
+                        <i class="bi bi-file-earmark-text"></i> Relatório Completo
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% if alertas|length > 0 %}
+<div class="alert alert-danger d-flex justify-content-between align-items-center mt-4">
+    <span><i class="bi bi-exclamation-triangle-fill me-2"></i> <strong>Alerta Crítico</strong>
+        {% for a in alertas %} Produto {{ a.produto }} vendido abaixo do custo em {{ a.data }}. {% endfor %}
+    </span>
+    <form method="get" action="{{ url_for('listar_movimentacoes') }}" class="mb-0">
+        <button type="submit" class="btn btn-danger btn-sm">Verificar</button>
+    </form>
+</div>
+{% endif %}
+<script>
+const ctx = document.getElementById('grafico-lucro').getContext('2d');
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: {{ grafico_labels|tojson }},
+        datasets: [{
+            label: 'Margem de Lucro (R$)',
+            data: {{ grafico_lucro|tojson }},
+            borderColor: '#1e88e5',
+            backgroundColor: 'rgba(30,136,229,0.08)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 4,
+            pointBackgroundColor: '#1e88e5',
+        }]
+    },
+    options: {
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
+            x: { grid: { display: false } }
+        }
+    }
+});
+</script>
+{% endblock %}

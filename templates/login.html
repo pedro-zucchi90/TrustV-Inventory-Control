@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content_public %}
+<div class="container mt-5" style="max-width: 400px;">
+    <h2 class="mb-4">Entrar no Sistema</h2>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+            {{ form.email.label(class="form-label") }}
+            {{ form.email(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.senha.label(class="form-label") }}
+            {{ form.senha(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.submit(class="btn btn-primary w-100") }}
+        </div>
+        <div class="text-center mt-3">
+            <a href="{{ url_for('registrar') }}">Não possui conta? Cadastre-se</a>
+        </div>
+    </form>
+</div>
+{% endblock %} 

@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5" style="max-width: 500px;">
+    <h2 class="mb-4 text-center">Editar Conta</h2>
+    <form method="POST" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        <div class="mb-3 text-center">
+            <img src="{{ url_for('static', filename=current_user.foto_perfil) if current_user.foto_perfil else 'https://ui-avatars.com/api/?name=' + current_user.nome }}" class="rounded-circle" style="width: 150px; height: 150px; object-fit: cover; border: 2px solid #e0e6ed;">
+        </div>
+        <div class="mb-3">
+            {{ form.nome.label(class="form-label") }}
+            {{ form.nome(class="form-control") }}
+            {% for error in form.nome.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="mb-3">
+            {{ form.email.label(class="form-label") }}
+            {{ form.email(class="form-control") }}
+            {% for error in form.email.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="mb-3">
+            {{ form.foto_perfil.label(class="form-label") }}
+            {{ form.foto_perfil(class="form-control") }}
+            {% for error in form.foto_perfil.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="mb-3">
+            {{ form.senha.label(class="form-label") }}
+            {{ form.senha(class="form-control") }}
+            {% for error in form.senha.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="mb-3">
+            {{ form.confirmar_senha.label(class="form-label") }}
+            {{ form.confirmar_senha(class="form-control") }}
+            {% for error in form.confirmar_senha.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="mb-3">
+            {{ form.submit(class="btn btn-primary w-100") }}
+        </div>
+    </form>
+</div>
+{% endblock %} 
