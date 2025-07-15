@@ -265,12 +265,12 @@ def registrar_movimentacao():
                 flash('Informe o valor de venda!', 'danger')
                 return redirect(url_for('registrar_movimentacao', tipo='venda'))
             
-            # Implementar FIFO para cálculo do custo
+            #FIFO para cálculo do custo
             quantidade_vendida = form.quantidade.data
             custo_total_venda = 0
             quantidade_restante = quantidade_vendida
             
-            # Buscar compras ordenadas por data (mais antigas primeiro) e preço (menor primeiro)
+            #buscar compras ordenadas por data (mais antigas primeiro) e preço (menor primeiro)
             compras = Movimentacao.query.filter_by(
                 produto_id=form.produto_id.data, 
                 tipo='compra'
@@ -293,7 +293,6 @@ def registrar_movimentacao():
             custo_unitario = custo_total_venda / quantidade_vendida if quantidade_vendida > 0 else 0
             
             valor_unitario = float(form.valor_venda.data)
-            print(f'Registrando VENDA FIFO: produto={produto.nome}, quantidade={quantidade_vendida}, custo_total={custo_total_venda}, custo_unitario={custo_unitario}')
         else:
             custo_unitario = None
             valor_unitario = float(form.valor_unitario.data)
@@ -437,7 +436,6 @@ def calcular_campos_fiscais_automaticamente():
         venda.despesas_comerciais = calcular_despesas_comerciais(venda.valor_unitario, venda.quantidade)
     
     db.session.commit()
-    print(f"Campos fiscais calculados para {len(vendas)} vendas")
 
 @app.context_processor
 def inject_alertas_fiscais():
@@ -499,12 +497,9 @@ def api_preco_medio_geral():
 
 @app.route('/registrar', methods=['GET', 'POST'])
 def registrar():
-    print('Entrou na view de registro')
     form = CadastroUsuarioForm()
     if form.validate_on_submit():
-        print('Formulário validado')
         if Usuario.query.filter_by(email=form.email.data).first():
-            print('E-mail já cadastrado')
             flash('Este e-mail já está cadastrado.', 'danger')
             return redirect(url_for('registrar'))
         usuario = Usuario(
@@ -514,7 +509,6 @@ def registrar():
         usuario.set_password(form.senha.data)
         db.session.add(usuario)
         db.session.commit()
-        print('Usuário cadastrado com sucesso')
         flash('Conta criada com sucesso! Agora é só entrar.', 'success')
         return redirect(url_for('login'))
     else:
@@ -543,7 +537,6 @@ def editar_conta():
 @app.route('/api/dashboard')
 @login_required
 def api_dashboard():
-    print('Calculando dashboard...')
     produtos = Produto.query.filter_by().all()
     def custo_medio(produto):
         compras = [m for m in produto.movimentacoes if m.tipo == 'compra']
@@ -552,7 +545,6 @@ def api_dashboard():
         return (total_valor / total_qtd) if total_qtd > 0 else 0
     total_estoque = sum(p.quantidade_estoque for p in produtos)
     valor_estoque = sum(max(p.quantidade_estoque, 0) * p.preco_compra for p in produtos)
-    print(f'Valor em estoque (custo médio): {valor_estoque}')
     mes = datetime.now().month
     ano = datetime.now().year
     vendas = Movimentacao.query.filter_by(tipo='venda').filter(extract('month', Movimentacao.data)==mes, extract('year', Movimentacao.data)==ano).all()
@@ -560,9 +552,7 @@ def api_dashboard():
     for venda in vendas:
         produto = Produto.query.get(venda.produto_id)
         custo = venda.custo_unitario if venda.custo_unitario is not None else custo_medio(produto)
-        print(f'venda: {venda.valor_unitario}, custo: {custo}, qtd: {venda.quantidade}')
         margem_lucro += (venda.valor_unitario - custo) * venda.quantidade
-    print(f'Margem de lucro do mês: {margem_lucro}')
     alertas = []
     for venda in vendas:
         produto = Produto.query.get(venda.produto_id)
@@ -1155,7 +1145,6 @@ def api_movimentacao_detalhes(movimentacao_id):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-        # Calcular campos fiscais automaticamente na primeira execução
         try:
             calcular_campos_fiscais_automaticamente()
         except Exception as e:
