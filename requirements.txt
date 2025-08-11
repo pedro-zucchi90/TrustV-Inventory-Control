@@ -4,3 +4,4 @@ Flask-WTF
 Flask-Login
 bcrypt
 WTForms 
+pdfkit 

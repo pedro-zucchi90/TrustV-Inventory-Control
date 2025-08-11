@@ -8,8 +8,7 @@
 /__pycache__
 
 # Banco de dados local (não versionar)
-/instance/
-/instance/database.db
+/instance/*
 
 # Fotos de perfil dos usuários (não versionar)
 /static/profile_pics/
