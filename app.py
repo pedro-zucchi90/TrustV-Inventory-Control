@@ -226,18 +226,44 @@ def editar_produto(produto_id):
 @login_required
 def deletar_produto(produto_id):
     produto = Produto.query.get_or_404(produto_id)
-    db.session.delete(produto)
-    db.session.commit()
-    auditoria = Auditoria(
-        usuario_id=current_user.id,
-        acao='Exclusão',
-        entidade='Produto',
-        entidade_id=produto.id,
-        detalhes=f'Produto excluído: {produto.nome}'
-    )
-    db.session.add(auditoria)
-    db.session.commit()
-    flash('Produto removido com sucesso!', 'success')
+
+    try:
+        # Excluir devoluções relacionadas ao produto
+        devolucoes_relacionadas = Devolucao.query.filter_by(produto_id=produto.id).all()
+        total_devolucoes = len(devolucoes_relacionadas)
+        for devolucao in devolucoes_relacionadas:
+            db.session.delete(devolucao)
+
+        # Excluir movimentações relacionadas ao produto
+        movimentacoes_relacionadas = Movimentacao.query.filter_by(produto_id=produto.id).all()
+        total_movimentacoes = len(movimentacoes_relacionadas)
+        for movimentacao in movimentacoes_relacionadas:
+            db.session.delete(movimentacao)
+
+        # Excluir o produto
+        db.session.delete(produto)
+        db.session.commit()
+
+        # Registrar auditoria resumindo a exclusão em cascata
+        auditoria = Auditoria(
+            usuario_id=current_user.id,
+            acao='Exclusão',
+            entidade='Produto',
+            entidade_id=produto.id,
+            detalhes=(
+                f'Produto excluído: {produto.nome}. '
+                f'Movimentações removidas: {total_movimentacoes}. '
+                f'Devoluções removidas: {total_devolucoes}.'
+            )
+        )
+        db.session.add(auditoria)
+        db.session.commit()
+
+        flash('Produto e registros relacionados removidos com sucesso!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao excluir produto: {e}', 'danger')
+
     return redirect(url_for('index'))
 
 @app.route('/movimentacoes', methods=['GET'])
