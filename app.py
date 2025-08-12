@@ -576,14 +576,15 @@ def ensure_schema_columns():
 @app.context_processor
 def inject_alertas_fiscais():
     alertas = []
-    vendas = (
-        Movimentacao.query.filter_by(tipo='venda', usuario_id=current_user.id)
-        .order_by(Movimentacao.data.desc()).limit(20).all()
-    )
-    for venda in vendas:
-        produto = Produto.query.get(venda.produto_id)
-        if venda.valor_unitario < produto.preco_compra:
-            alertas.append(f"Venda do produto '{produto.nome}' abaixo do custo em {venda.data.strftime('%d/%m/%Y')}")
+    if current_user.is_authenticated:
+        vendas = (
+            Movimentacao.query.filter_by(tipo='venda', usuario_id=current_user.id)
+            .order_by(Movimentacao.data.desc()).limit(20).all()
+        )
+        for venda in vendas:
+            produto = Produto.query.get(venda.produto_id)
+            if venda.valor_unitario < produto.preco_compra:
+                alertas.append(f"Venda do produto '{produto.nome}' abaixo do custo em {venda.data.strftime('%d/%m/%Y')}")
     return dict(alertas_fiscais=alertas)
 
 @app.route('/recalcular_fiscais')
