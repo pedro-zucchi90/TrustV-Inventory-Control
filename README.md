@@ -102,11 +102,33 @@ O TrustV Inventory Control é um sistema de gestão de inventário e controle fi
    ```bash
    pip install -r requirements.txt
    ```
-2. Execute o app:
+2. Crie o arquivo `config.py` na raiz do projeto, com por exemplo:
+   ```python
+   import os
+
+   basedir = os.path.abspath(os.path.dirname(__file__))
+   class Config:
+       SECRET_KEY = os.environ.get('SECRET_KEY') or 'your_secret_key'
+       SQLALCHEMY_DATABASE_URI = f"sqlite:///{os.path.join(basedir, 'instance', 'database.db')}"
+       SQLALCHEMY_TRACK_MODIFICATIONS = False
+   ```
+   > Você pode personalizar a chave secreta e o nome do banco conforme sua necessidade.
+
+3. O arquivo `config_fiscal.py` define as regras fiscais (impostos, despesas e CMV) e pode ser adaptado conforme sua operação.  
+   Exemplo de trecho personalizável:
+   ```python
+   TAXA_IMPOSTOS_VENDAS = 0.18  # 18%
+   TAXA_DESPESAS_ADMINISTRATIVAS = 0.02  # 2%
+   TAXA_DESPESAS_COMERCIAIS = 0.03  # 3%
+   # ...funções de cálculo...
+   ```
+   > Edite esse arquivo à vontade para ajustar as taxas e fórmulas ao seu negócio.
+
+4. Execute o app:
    ```bash
    python app.py
    ```
-3. Acesse em http://localhost:5000
+5. Acesse em http://localhost:5000
 
 ## Diferenciais Fiscais
 - Apuração do imposto sobre o lucro real, conforme custo atualizado do produto
