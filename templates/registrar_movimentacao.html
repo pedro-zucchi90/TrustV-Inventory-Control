@@ -1,7 +1,26 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="container mt-5" style="max-width: 500px;">
-    <h2 class="mb-4">Registrar Movimentação</h2>
+<div class="container mt-5" style="max-width: 600px;">
+    {% set current_tipo = request.args.get('tipo') or (form.tipo.data if form and form.tipo and form.tipo.data else '') %}
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div class="d-flex align-items-center" style="gap:10px;">
+            {% if current_tipo == 'venda' %}
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle" data-bs-toggle="tooltip" title="Venda" style="display:flex; align-items:center; gap:6px; padding:8px 10px;">
+                    <i class="bi bi-cart-check"></i>
+                    <span>Venda</span>
+                </span>
+            {% else %}
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle" data-bs-toggle="tooltip" title="Compra" style="display:flex; align-items:center; gap:6px; padding:8px 10px;">
+                    <i class="bi bi-cart-plus"></i>
+                    <span>Compra</span>
+                </span>
+            {% endif %}
+            <h2 class="m-0">Registrar Movimentação</h2>
+        </div>
+    </div>
+
+    
+
     <form method="POST" id="movForm">
         {{ form.hidden_tag() }}
         <div class="mb-3">
@@ -43,5 +62,11 @@
     }
     document.querySelector('[name="tipo"]').addEventListener('change', toggleCampos);
     window.onload = toggleCampos;
+
+    // Inicializar tooltips Bootstrap 5
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+        new bootstrap.Tooltip(tooltipTriggerEl);
+    });
 </script>
 {% endblock %} 
