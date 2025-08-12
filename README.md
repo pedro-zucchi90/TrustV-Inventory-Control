@@ -114,13 +114,33 @@ O TrustV Inventory Control é um sistema de gestão de inventário e controle fi
    ```
    > Você pode personalizar a chave secreta e o nome do banco conforme sua necessidade.
 
-3. O arquivo `config_fiscal.py` define as regras fiscais (impostos, despesas e CMV) e pode ser adaptado conforme sua operação.  
+3. O arquivo `config_fiscal.py` centraliza as regras de negócio fiscais (impostos, despesas, CMV).  
+   Você pode editar livremente as taxas e funções neste arquivo para adaptar o sistema à sua realidade.
    Exemplo de trecho personalizável:
+
    ```python
-   TAXA_IMPOSTOS_VENDAS = 0.18  # 18%
-   TAXA_DESPESAS_ADMINISTRATIVAS = 0.02  # 2%
-   TAXA_DESPESAS_COMERCIAIS = 0.03  # 3%
-   # ...funções de cálculo...
+   # Exemplo (editável):
+   TAXA_IMPOSTOS_VENDAS = 0.18  # 18% de impostos
+   TAXA_DESPESAS_ADMINISTRATIVAS = 0.02  # 2% administrativas
+   TAXA_DESPESAS_COMERCIAIS = 0.03  # 3% comerciais
+
+   def calcular_impostos_vendas(valor_unitario, quantidade):
+       return valor_unitario * quantidade * TAXA_IMPOSTOS_VENDAS
+
+   def calcular_desconto_venda(valor_unitario, quantidade, percentual_desconto=None):
+       valor_total = valor_unitario * quantidade
+       if percentual_desconto is not None and percentual_desconto > 0:
+           return valor_total * (percentual_desconto / 100)
+       return 0.0
+
+   def calcular_despesas_administrativas(valor_unitario, quantidade):
+       return valor_unitario * quantidade * TAXA_DESPESAS_ADMINISTRATIVAS
+
+   def calcular_despesas_comerciais(valor_unitario, quantidade):
+       return valor_unitario * quantidade * TAXA_DESPESAS_COMERCIAIS
+
+   def calcular_cmv(custo_unitario, quantidade):
+       return custo_unitario * quantidade if custo_unitario else 0.0
    ```
    > Edite esse arquivo à vontade para ajustar as taxas e fórmulas ao seu negócio.
 
