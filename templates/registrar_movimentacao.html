@@ -5,12 +5,12 @@
     <div class="d-flex align-items-center justify-content-between mb-3">
         <div class="d-flex align-items-center" style="gap:10px;">
             {% if current_tipo == 'venda' %}
-                <span class="badge bg-danger-subtle text-danger border border-danger-subtle" data-bs-toggle="tooltip" title="Venda" style="display:flex; align-items:center; gap:6px; padding:8px 10px;">
+                <span class="badge bg-danger text-white" data-bs-toggle="tooltip" title="Venda" style="display:flex; align-items:center; gap:6px; padding:8px 10px;">
                     <i class="bi bi-cart-check"></i>
                     <span>Venda</span>
                 </span>
             {% else %}
-                <span class="badge bg-primary-subtle text-primary border border-primary-subtle" data-bs-toggle="tooltip" title="Compra" style="display:flex; align-items:center; gap:6px; padding:8px 10px;">
+                <span class="badge bg-primary text-white" data-bs-toggle="tooltip" title="Compra" style="display:flex; align-items:center; gap:6px; padding:8px 10px;">
                     <i class="bi bi-cart-plus"></i>
                     <span>Compra</span>
                 </span>
@@ -32,24 +32,35 @@
             {{ form.tipo(class="form-select", id="tipoSelect") }}
         </div>
         <div class="mb-3">
-            {{ form.quantidade.label(class="form-label") }}
-            {{ form.quantidade(class="form-control") }}
+            <label class="form-label d-flex align-items-center justify-content-between">
+                <span>{{ form.quantidade.label.text }}</span>
+                <small id="chipEstoque" class="badge bg-secondary" style="font-weight:600;">Estoque disponível: -</small>
+            </label>
+            {{ form.quantidade(class="form-control", placeholder="Ex.: 5", min="0", step="1") }}
         </div>
         <div class="mb-3" id="campo-compra" style="display: none;">
-            {{ form.valor_unitario.label(class="form-label") }}
-            {{ form.valor_unitario(class="form-control") }}
+            {{ form.valor_unitario.label(class="form-label", title="Valor de compra") }}
+            {{ form.valor_unitario(class="form-control", placeholder="Ex.: 12,50") }}
         </div>
         <div class="mb-3" id="campo-venda" style="display: none;">
-            {{ form.valor_venda.label(class="form-label") }}
-            {{ form.valor_venda(class="form-control") }}
+            {{ form.valor_venda.label(class="form-label", title="Valor de venda") }}
+            {{ form.valor_venda(class="form-control", placeholder="Ex.: 19,90") }}
         </div>
         <div class="mb-3" id="campo-desconto" style="display: none;">
-            {{ form.percentual_desconto.label(class="form-label") }}
+            {{ form.percentual_desconto.label(class="form-label", title="Percentual de desconto") }}
             {{ form.percentual_desconto(class="form-control", placeholder="0.00") }}
             <small class="form-text text-muted">Digite o percentual de desconto (ex: 5.00 para 5%)</small>
         </div>
         <div class="mb-3">
-            {{ form.submit(class="btn btn-primary w-100") }}
+            <button type="submit" id="btnSubmit" class="btn w-100">
+                <span class="btn-text">Registrar</span>
+                <span class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
+            </button>
+        </div>
+        <div id="resumoBox" class="alert alert-info d-none">
+            <div><strong>Subtotal:</strong> R$ <span id="resSubtotal">0,00</span></div>
+            <div class="d-none" id="linhaDesconto"><strong>Desconto:</strong> R$ <span id="resDesconto">0,00</span></div>
+            <div><strong>Total estimado:</strong> R$ <span id="resTotal">0,00</span></div>
         </div>
     </form>
 </div>
@@ -59,6 +70,9 @@
         document.getElementById('campo-compra').style.display = tipo === 'compra' ? '' : 'none';
         document.getElementById('campo-venda').style.display = tipo === 'venda' ? '' : 'none';
         document.getElementById('campo-desconto').style.display = tipo === 'venda' ? '' : 'none';
+        ajustarBotao();
+        atualizarResumo();
+        atualizarChipEstoque();
     }
     document.querySelector('[name="tipo"]').addEventListener('change', toggleCampos);
     window.onload = toggleCampos;
@@ -67,6 +81,94 @@
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.forEach(function (tooltipTriggerEl) {
         new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Dinâmica de botão (texto e cor)
+    function ajustarBotao() {
+        const tipo = document.querySelector('[name="tipo"]').value;
+        const btn = document.getElementById('btnSubmit');
+        const text = btn.querySelector('.btn-text');
+        btn.classList.remove('btn-primary','btn-danger');
+        if (tipo === 'venda') {
+            btn.classList.add('btn-danger');
+            text.textContent = 'Registrar Venda';
+        } else {
+            btn.classList.add('btn-primary');
+            text.textContent = 'Registrar Compra';
+        }
+    }
+
+    // Chip de estoque disponível
+    function atualizarChipEstoque() {
+        const produtoId = parseInt(document.querySelector('[name="produto_id"]').value || '0');
+        const tipo = document.querySelector('[name="tipo"]').value;
+        const chip = document.getElementById('chipEstoque');
+        const qtdInput = document.querySelector('[name="quantidade"]');
+        const produtosInfo = {{ produtos_info|tojson }};
+        const info = produtosInfo[produtoId];
+        if (!info) { chip.textContent = 'Estoque disponível: -'; chip.className = 'badge bg-secondary'; return; }
+        const disponivel = info.quantidade_estoque || 0;
+        chip.textContent = 'Estoque disponível: ' + disponivel;
+        // Em venda, destaque vermelho se insuficiente
+        const qtd = parseInt(qtdInput.value || '0');
+        if (tipo === 'venda' && qtd > disponivel) {
+            chip.className = 'badge bg-danger';
+        } else {
+            chip.className = 'badge bg-success';
+        }
+    }
+
+    // Preview dinâmico (subtotal, desconto, total)
+    function parseValor(inputStr) {
+        if (!inputStr) return 0;
+        // Aceita formatos "12,50" ou "12.50"
+        const s = String(inputStr).replace('.', '').replace(',', '.');
+        const v = parseFloat(s);
+        return isNaN(v) ? 0 : v;
+    }
+
+    function atualizarResumo() {
+        const tipo = document.querySelector('[name="tipo"]').value;
+        const qtd = parseInt(document.querySelector('[name="quantidade"]').value || '0');
+        const pctDesc = parseFloat(document.querySelector('[name="percentual_desconto"]').value || '0');
+        const valorCompra = parseValor(document.querySelector('[name="valor_unitario"]').value);
+        const valorVenda = parseValor(document.querySelector('[name="valor_venda"]').value);
+        const resumo = document.getElementById('resumoBox');
+        const linhaDesconto = document.getElementById('linhaDesconto');
+        const elSubtotal = document.getElementById('resSubtotal');
+        const elDesconto = document.getElementById('resDesconto');
+        const elTotal = document.getElementById('resTotal');
+
+        let subtotal = 0, desconto = 0, total = 0;
+        if (tipo === 'compra') {
+            subtotal = (valorCompra || 0) * (qtd || 0);
+            total = subtotal;
+            linhaDesconto.classList.add('d-none');
+        } else {
+            subtotal = (valorVenda || 0) * (qtd || 0);
+            desconto = subtotal * ((pctDesc || 0) / 100);
+            total = subtotal - desconto;
+            linhaDesconto.classList.toggle('d-none', desconto <= 0);
+        }
+        elSubtotal.textContent = subtotal.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        elDesconto.textContent = desconto.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        elTotal.textContent = total.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        resumo.classList.toggle('d-none', (qtd || 0) === 0);
+    }
+
+    // Eventos
+    document.querySelector('[name="produto_id"]').addEventListener('change', function(){ atualizarChipEstoque(); atualizarResumo(); });
+    document.querySelector('[name="quantidade"]').addEventListener('input', function(){ atualizarChipEstoque(); atualizarResumo(); });
+    const valCompra = document.querySelector('[name="valor_unitario"]'); if (valCompra) valCompra.addEventListener('input', atualizarResumo);
+    const valVenda = document.querySelector('[name="valor_venda"]'); if (valVenda) valVenda.addEventListener('input', atualizarResumo);
+    const pct = document.querySelector('[name="percentual_desconto"]'); if (pct) pct.addEventListener('input', atualizarResumo);
+
+    // Envio com spinner e prevenção de duplo clique
+    const formEl = document.getElementById('movForm');
+    formEl.addEventListener('submit', function(){
+        const btn = document.getElementById('btnSubmit');
+        btn.disabled = true;
+        btn.querySelector('.spinner-border').classList.remove('d-none');
     });
 </script>
 {% endblock %} 

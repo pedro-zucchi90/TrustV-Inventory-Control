@@ -326,7 +326,8 @@ def registrar_movimentacao():
     form = MovimentacaoForm()
     if tipo_param in ['compra', 'venda'] and request.method == 'GET':
         form.tipo.data = tipo_param
-    form.produto_id.choices = [(p.id, p.nome) for p in Produto.query.filter_by(usuario_id=current_user.id).all()]
+    produtos_usuario = Produto.query.filter_by(usuario_id=current_user.id).all()
+    form.produto_id.choices = [(p.id, p.nome) for p in produtos_usuario]
     if form.validate_on_submit():
         produto = Produto.query.filter_by(id=form.produto_id.data, usuario_id=current_user.id).first_or_404()
         if form.tipo.data == 'venda':
@@ -423,7 +424,18 @@ def registrar_movimentacao():
         db.session.commit()
         flash('Movimentação registrada com sucesso!', 'success')
         return redirect(url_for('index'))
-    return render_template('registrar_movimentacao.html', form=form)
+    # Dados auxiliares para UI (estoque disponível e preços)
+    produtos_info = {
+        p.id: {
+            'id': p.id,
+            'nome': p.nome,
+            'quantidade_estoque': int(p.quantidade_estoque or 0),
+            'preco_compra': float(p.preco_compra or 0),
+            'preco_venda': float(p.preco_venda or 0),
+        }
+        for p in produtos_usuario
+    }
+    return render_template('registrar_movimentacao.html', form=form, produtos_info=produtos_info)
 
 @app.route('/relatorio_fiscal')
 @login_required
