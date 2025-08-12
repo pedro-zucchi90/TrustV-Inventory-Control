@@ -4,7 +4,6 @@
 ![GitHub last commit](https://img.shields.io/github/last-commit/pedro-zucchi90/TrustV-Inventory-Control?style=flat-square)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-blue?style=flat-square&logo=python)
 ![Flask](https://img.shields.io/badge/Flask-%23000?style=flat-square&logo=flask)
-![License](https://img.shields.io/github/license/pedro-zucchi90/TrustV-Inventory-Control?style=flat-square)
 
 ## Visão Geral
 O **TrustV Inventory Control** é um sistema de gestão de inventário e controle fiscal, projetado para empresas que precisam de precisão e segurança na apuração de custos e impostos, conforme as normas da Receita Federal do Brasil.
