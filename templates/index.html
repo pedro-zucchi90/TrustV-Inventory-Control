@@ -27,6 +27,88 @@
     </div>
     <canvas id="grafico-lucro" height="80"></canvas>
 </div>
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="grafico-box">
+        <div class="grafico-header">
+            <span class="fw-bold">Distribuição do Valor em Estoque (Top 5)</span>
+        </div>
+        <div class="d-flex justify-content-center">
+            <div style="max-width: 360px; width: 100%;">
+                <canvas id="grafico-estoque-pizza" style="max-height: 280px;"></canvas>
+            </div>
+        </div>
+        <div class="text-muted" style="font-size: 0.9rem; margin-top:8px;">Baseado em quantidade × preço de compra.</div>
+        
+        <script>
+        const ctxPizza = document.getElementById('grafico-estoque-pizza').getContext('2d');
+        new Chart(ctxPizza, {
+            type: 'doughnut',
+            data: {
+                labels: {{ grafico_pizza_labels|tojson }},
+                datasets: [{
+                    data: {{ grafico_pizza_dados|tojson }},
+                    backgroundColor: [
+                        '#42a5f5', '#66bb6a', '#ffa726', '#ab47bc', '#ef5350', '#8d6e63'
+                    ],
+                    borderColor: '#ffffff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom',
+                        labels: { boxWidth: 12, padding: 12 }
+                    }
+                },
+                cutout: '55%'
+            }
+        });
+        </script>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="grafico-box">
+        <div class="grafico-header">
+            <span class="fw-bold">Top 5 Produtos Vendidos no Mês (Qtd)</span>
+        </div>
+        <div class="d-flex justify-content-center">
+            <div style="max-width: 420px; width: 100%; height: 280px;">
+                <canvas id="grafico-bar-vendas" style="max-height: 280px;"></canvas>
+            </div>
+        </div>
+        <script>
+        const ctxBar = document.getElementById('grafico-bar-vendas').getContext('2d');
+        new Chart(ctxBar, {
+            type: 'bar',
+            data: {
+                labels: {{ grafico_bar_vendas_labels|tojson }},
+                datasets: [{
+                    label: 'Quantidade vendida',
+                    data: {{ grafico_bar_vendas_dados|tojson }},
+                    backgroundColor: '#1e88e5',
+                    borderRadius: 6,
+                    maxBarThickness: 28
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+        </script>
+    </div>
+  </div>
+</div>
 <div class="table-box mb-4">
     <div class="fw-bold mb-2">Produtos com Divergência Fiscal</div>
     <table>

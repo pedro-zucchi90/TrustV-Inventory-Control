@@ -12,7 +12,7 @@ import os
 from werkzeug.utils import secure_filename
 from models import Movimentacao
 from datetime import datetime
-from sqlalchemy import extract
+from sqlalchemy import extract, inspect, text
 from forms import CadastroUsuarioForm, EditarUsuarioForm
 # Removido WeasyPrint
 import pdfkit
@@ -61,7 +61,7 @@ def logout():
 @app.route('/index')
 @login_required
 def index():
-    produtos = Produto.query.all()
+    produtos = Produto.query.filter_by(usuario_id=current_user.id).all()
     def custo_medio(produto):
         compras = [m for m in produto.movimentacoes if m.tipo == 'compra']
         total_qtd = sum(m.quantidade for m in compras)
@@ -72,7 +72,23 @@ def index():
 
     mes = datetime.now().month
     ano = datetime.now().year
-    vendas_mes = Movimentacao.query.filter_by(tipo='venda').filter(extract('month', Movimentacao.data)==mes, extract('year', Movimentacao.data)==ano).all()
+    vendas_mes = (
+        Movimentacao.query.filter_by(tipo='venda', usuario_id=current_user.id)
+        .filter(extract('month', Movimentacao.data) == mes, extract('year', Movimentacao.data) == ano)
+        .all()
+    )
+    # Top 5 produtos mais vendidos (quantidade) no mês
+    vendas_por_produto = {}
+    for venda in vendas_mes:
+        vendas_por_produto[venda.produto_id] = vendas_por_produto.get(venda.produto_id, 0) + (venda.quantidade or 0)
+    vendas_top_lista = []
+    for produto_id, quantidade_total in vendas_por_produto.items():
+        produto_ref = Produto.query.get(produto_id)
+        nome_produto = produto_ref.nome if produto_ref else f"Produto {produto_id}"
+        vendas_top_lista.append((nome_produto, quantidade_total))
+    vendas_top_lista.sort(key=lambda x: x[1], reverse=True)
+    grafico_bar_vendas_labels = [n for n, _ in vendas_top_lista[:5]]
+    grafico_bar_vendas_dados = [q for _, q in vendas_top_lista[:5]]
     margem_lucro = 0
     for venda in vendas_mes:
         # Usar sempre o custo_unitario salvo na movimentação, nunca o preco_compra atual
@@ -127,7 +143,10 @@ def index():
                     'diferenca_compra': ultima.valor_unitario - penultima.valor_unitario
                 })
 
-    ultimas_transacoes = Movimentacao.query.order_by(Movimentacao.data.desc()).limit(5).all()
+    ultimas_transacoes = (
+        Movimentacao.query.filter_by(usuario_id=current_user.id)
+        .order_by(Movimentacao.data.desc()).limit(5).all()
+    )
 
     from calendar import month_abbr
     labels = []
@@ -135,7 +154,11 @@ def index():
     for i in range(5, -1, -1):
         mes_ref = (datetime.now().month - i - 1) % 12 + 1
         ano_ref = datetime.now().year if datetime.now().month - i > 0 else datetime.now().year - 1
-        vendas = Movimentacao.query.filter_by(tipo='venda').filter(extract('month', Movimentacao.data)==mes_ref, extract('year', Movimentacao.data)==ano_ref).all()
+        vendas = (
+            Movimentacao.query.filter_by(tipo='venda', usuario_id=current_user.id)
+            .filter(extract('month', Movimentacao.data) == mes_ref, extract('year', Movimentacao.data) == ano_ref)
+            .all()
+        )
         lucro = 0
         for venda in vendas:
             produto = Produto.query.get(venda.produto_id)
@@ -143,6 +166,20 @@ def index():
             lucro += (venda.valor_unitario - custo) * venda.quantidade
         labels.append(month_abbr[mes_ref].capitalize())
         data_lucro.append(lucro)
+
+    # Preparar dados para gráfico de pizza: distribuição do valor de estoque por produto (Top 5 + Outros)
+    valores_produtos = []
+    for p in produtos:
+        try:
+            valor = float(max(p.quantidade_estoque or 0, 0) * float(p.preco_compra or 0))
+        except Exception:
+            valor = 0.0
+        valores_produtos.append((p.nome or f"Produto {p.id}", valor))
+    valores_produtos.sort(key=lambda x: x[1], reverse=True)
+    top5 = valores_produtos[:5]
+    outros_total = sum(v for _, v in valores_produtos[5:])
+    grafico_pizza_labels = [n for n, _ in top5] + (["Outros"] if outros_total > 0 else [])
+    grafico_pizza_dados = [v for _, v in top5] + ([outros_total] if outros_total > 0 else [])
 
     return render_template('index.html',
         produtos=produtos,
@@ -153,7 +190,11 @@ def index():
         divergencias=divergencias,
         ultimas_transacoes=ultimas_transacoes,
         grafico_labels=labels,
-        grafico_lucro=data_lucro
+        grafico_lucro=data_lucro,
+        grafico_pizza_labels=grafico_pizza_labels,
+        grafico_pizza_dados=grafico_pizza_dados,
+        grafico_bar_vendas_labels=grafico_bar_vendas_labels,
+        grafico_bar_vendas_dados=grafico_bar_vendas_dados
     )
 
 # Adicionar auditoria ao cadastrar produto
@@ -167,7 +208,8 @@ def adicionar_produto():
             descricao=form.descricao.data,
             preco_compra=float(form.preco_compra.data),
             preco_venda=float(form.preco_venda.data),
-            quantidade_estoque=form.quantidade_estoque.data
+            quantidade_estoque=form.quantidade_estoque.data,
+            usuario_id=current_user.id
         )
         db.session.add(novo_produto)
         db.session.commit()
@@ -178,7 +220,8 @@ def adicionar_produto():
                 tipo='compra',
                 quantidade=novo_produto.quantidade_estoque,
                 valor_unitario=novo_produto.preco_compra,
-                custo_unitario=None
+                custo_unitario=None,
+                usuario_id=current_user.id
             )
             db.session.add(movimentacao_inicial)
             db.session.commit()
@@ -199,7 +242,7 @@ def adicionar_produto():
 @app.route('/editar/<int:produto_id>', methods=['GET', 'POST'])
 @login_required
 def editar_produto(produto_id):
-    produto = Produto.query.get_or_404(produto_id)
+    produto = Produto.query.filter_by(id=produto_id, usuario_id=current_user.id).first_or_404()
     form = CadastroProdutoForm(obj=produto)
     if form.validate_on_submit():
         produto.nome = form.nome.data
@@ -225,25 +268,54 @@ def editar_produto(produto_id):
 @app.route('/deletar/<int:produto_id>', methods=['POST'])
 @login_required
 def deletar_produto(produto_id):
-    produto = Produto.query.get_or_404(produto_id)
-    db.session.delete(produto)
-    db.session.commit()
-    auditoria = Auditoria(
-        usuario_id=current_user.id,
-        acao='Exclusão',
-        entidade='Produto',
-        entidade_id=produto.id,
-        detalhes=f'Produto excluído: {produto.nome}'
-    )
-    db.session.add(auditoria)
-    db.session.commit()
-    flash('Produto removido com sucesso!', 'success')
+    produto = Produto.query.filter_by(id=produto_id, usuario_id=current_user.id).first_or_404()
+
+    try:
+        # Excluir devoluções relacionadas ao produto
+        devolucoes_relacionadas = Devolucao.query.filter_by(produto_id=produto.id).all()
+        total_devolucoes = len(devolucoes_relacionadas)
+        for devolucao in devolucoes_relacionadas:
+            db.session.delete(devolucao)
+
+        # Excluir movimentações relacionadas ao produto
+        movimentacoes_relacionadas = Movimentacao.query.filter_by(produto_id=produto.id).all()
+        total_movimentacoes = len(movimentacoes_relacionadas)
+        for movimentacao in movimentacoes_relacionadas:
+            db.session.delete(movimentacao)
+
+        # Excluir o produto
+        db.session.delete(produto)
+        db.session.commit()
+
+        # Registrar auditoria resumindo a exclusão em cascata
+        auditoria = Auditoria(
+            usuario_id=current_user.id,
+            acao='Exclusão',
+            entidade='Produto',
+            entidade_id=produto.id,
+            detalhes=(
+                f'Produto excluído: {produto.nome}. '
+                f'Movimentações removidas: {total_movimentacoes}. '
+                f'Devoluções removidas: {total_devolucoes}.'
+            )
+        )
+        db.session.add(auditoria)
+        db.session.commit()
+
+        flash('Produto e registros relacionados removidos com sucesso!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao excluir produto: {e}', 'danger')
+
     return redirect(url_for('index'))
 
 @app.route('/movimentacoes', methods=['GET'])
 @login_required
 def listar_movimentacoes():
-    movimentacoes = Movimentacao.query.order_by(Movimentacao.data.desc()).all()
+    movimentacoes = (
+        Movimentacao.query.filter_by(usuario_id=current_user.id)
+        .order_by(Movimentacao.data.desc()).all()
+    )
     return render_template('movimentacoes.html', movimentacoes=movimentacoes)
 
 # Adicionar auditoria ao registrar movimentação
@@ -254,9 +326,10 @@ def registrar_movimentacao():
     form = MovimentacaoForm()
     if tipo_param in ['compra', 'venda'] and request.method == 'GET':
         form.tipo.data = tipo_param
-    form.produto_id.choices = [(p.id, p.nome) for p in Produto.query.all()]
+    produtos_usuario = Produto.query.filter_by(usuario_id=current_user.id).all()
+    form.produto_id.choices = [(p.id, p.nome) for p in produtos_usuario]
     if form.validate_on_submit():
-        produto = Produto.query.get(form.produto_id.data)
+        produto = Produto.query.filter_by(id=form.produto_id.data, usuario_id=current_user.id).first_or_404()
         if form.tipo.data == 'venda':
             if form.quantidade.data > produto.quantidade_estoque:
                 flash('Não é possível vender mais do que o estoque disponível!', 'danger')
@@ -271,10 +344,15 @@ def registrar_movimentacao():
             quantidade_restante = quantidade_vendida
             
             #buscar compras ordenadas por data (mais antigas primeiro) e preço (menor primeiro)
-            compras = Movimentacao.query.filter_by(
-                produto_id=form.produto_id.data, 
-                tipo='compra'
-            ).order_by(Movimentacao.valor_unitario.asc(), Movimentacao.data.asc()).all()
+            compras = (
+                Movimentacao.query.filter_by(
+                    produto_id=form.produto_id.data,
+                    tipo='compra',
+                    usuario_id=current_user.id
+                )
+                .order_by(Movimentacao.data.asc())
+                .all()
+            )
             
             for compra in compras:
                 if quantidade_restante <= 0:
@@ -325,7 +403,8 @@ def registrar_movimentacao():
             imposto_vendas=imposto_vendas,
             cmv=cmv,
             despesas_administrativas=despesas_administrativas,
-            despesas_comerciais=despesas_comerciais
+            despesas_comerciais=despesas_comerciais,
+            usuario_id=current_user.id
         )
         if form.tipo.data == 'compra':
             produto.quantidade_estoque += form.quantidade.data
@@ -345,7 +424,18 @@ def registrar_movimentacao():
         db.session.commit()
         flash('Movimentação registrada com sucesso!', 'success')
         return redirect(url_for('index'))
-    return render_template('registrar_movimentacao.html', form=form)
+    # Dados auxiliares para UI (estoque disponível e preços)
+    produtos_info = {
+        p.id: {
+            'id': p.id,
+            'nome': p.nome,
+            'quantidade_estoque': int(p.quantidade_estoque or 0),
+            'preco_compra': float(p.preco_compra or 0),
+            'preco_venda': float(p.preco_venda or 0),
+        }
+        for p in produtos_usuario
+    }
+    return render_template('registrar_movimentacao.html', form=form, produtos_info=produtos_info)
 
 @app.route('/relatorio_fiscal')
 @login_required
@@ -353,7 +443,11 @@ def relatorio_fiscal():
     # Margem de lucro do mês atual
     mes = datetime.now().month
     ano = datetime.now().year
-    vendas = Movimentacao.query.filter_by(tipo='venda').filter(extract('month', Movimentacao.data)==mes, extract('year', Movimentacao.data)==ano).all()
+    vendas = (
+        Movimentacao.query.filter_by(tipo='venda', usuario_id=current_user.id)
+        .filter(extract('month', Movimentacao.data) == mes, extract('year', Movimentacao.data) == ano)
+        .all()
+    )
     margem_lucro = 0
     for venda in vendas:
         # Usar sempre o custo_unitario salvo na movimentação, nunca o preco_compra atual
@@ -381,7 +475,11 @@ def relatorio_fiscal():
 def exportar_relatorio_fiscal():
     mes = datetime.now().month
     ano = datetime.now().year
-    vendas = Movimentacao.query.filter_by(tipo='venda').filter(extract('month', Movimentacao.data)==mes, extract('year', Movimentacao.data)==ano).all()
+    vendas = (
+        Movimentacao.query.filter_by(tipo='venda', usuario_id=current_user.id)
+        .filter(extract('month', Movimentacao.data) == mes, extract('year', Movimentacao.data) == ano)
+        .all()
+    )
     def generate():
         data = [['Data', 'Tipo', 'Produto', 'Quantidade', 'Valor Unitário', 'Custo Unitário', '% Desconto', 'Desconto', 'Impostos', 'CMV', 'Margem de Lucro']]
         for venda in vendas:
@@ -424,23 +522,64 @@ def exportar_relatorio_fiscal():
     return Response(generate(), mimetype='text/csv', headers={"Content-Disposition": "attachment;filename=relatorio_fiscal.csv"})
 
 def calcular_campos_fiscais_automaticamente():
-    """Calcula automaticamente os campos fiscais para movimentações existentes"""
+    """Recalcula campos fiscais para TODAS as vendas, sem depender de usuário logado."""
     vendas = Movimentacao.query.filter_by(tipo='venda').all()
-    
+
     for venda in vendas:
-        # Calcular campos fiscais usando as funções de configuração
         venda.cmv = calcular_cmv(venda.custo_unitario, venda.quantidade)
         venda.imposto_vendas = calcular_impostos_vendas(venda.valor_unitario, venda.quantidade)
-        venda.desconto_venda = calcular_desconto_venda(venda.valor_unitario, venda.quantidade, venda.percentual_desconto)
-        venda.despesas_administrativas = calcular_despesas_administrativas(venda.valor_unitario, venda.quantidade)
-        venda.despesas_comerciais = calcular_despesas_comerciais(venda.valor_unitario, venda.quantidade)
-    
+        venda.desconto_venda = calcular_desconto_venda(
+            venda.valor_unitario, venda.quantidade, venda.percentual_desconto
+        )
+        venda.despesas_administrativas = calcular_despesas_administrativas(
+            venda.valor_unitario, venda.quantidade
+        )
+        venda.despesas_comerciais = calcular_despesas_comerciais(
+            venda.valor_unitario, venda.quantidade
+        )
+
     db.session.commit()
+
+
+def ensure_schema_columns():
+    """Garante colunas multi-tenant nas tabelas existentes (SQLite ALTER TABLE ADD COLUMN)."""
+    inspector = inspect(db.engine)
+
+    # produto.usuario_id
+    try:
+        produto_cols = {col['name'] for col in inspector.get_columns('produto')}
+        if 'usuario_id' not in produto_cols:
+            db.session.execute(text('ALTER TABLE produto ADD COLUMN usuario_id INTEGER'))
+            db.session.commit()
+    except Exception:
+        db.session.rollback()
+        # Deixar seguir; erros serão exibidos ao usar
+
+    # movimentacao.usuario_id
+    try:
+        mov_cols = {col['name'] for col in inspector.get_columns('movimentacao')}
+        if 'usuario_id' not in mov_cols:
+            db.session.execute(text('ALTER TABLE movimentacao ADD COLUMN usuario_id INTEGER'))
+            db.session.commit()
+    except Exception:
+        db.session.rollback()
+        
+    # devolucao.usuario_id (opcional, para bases antigas)
+    try:
+        dev_cols = {col['name'] for col in inspector.get_columns('devolucao')}
+        if 'usuario_id' not in dev_cols:
+            db.session.execute(text('ALTER TABLE devolucao ADD COLUMN usuario_id INTEGER'))
+            db.session.commit()
+    except Exception:
+        db.session.rollback()
 
 @app.context_processor
 def inject_alertas_fiscais():
     alertas = []
-    vendas = Movimentacao.query.filter_by(tipo='venda').order_by(Movimentacao.data.desc()).limit(20).all()
+    vendas = (
+        Movimentacao.query.filter_by(tipo='venda', usuario_id=current_user.id)
+        .order_by(Movimentacao.data.desc()).limit(20).all()
+    )
     for venda in vendas:
         produto = Produto.query.get(venda.produto_id)
         if venda.valor_unitario < produto.preco_compra:
@@ -467,7 +606,7 @@ def auditoria():
 @app.route('/api/preco_medio_produtos')
 @login_required
 def api_preco_medio_produtos():
-    produtos = Produto.query.all()
+    produtos = Produto.query.filter_by(usuario_id=current_user.id).all()
     resultado = []
     for produto in produtos:
         compras = [m for m in produto.movimentacoes if m.tipo == 'compra']
@@ -485,7 +624,7 @@ def api_preco_medio_produtos():
 @app.route('/api/preco_medio_geral')
 @login_required
 def api_preco_medio_geral():
-    produtos = Produto.query.all()
+    produtos = Produto.query.filter_by(usuario_id=current_user.id).all()
     total_qtd = 0
     total_valor = 0
     for produto in produtos:
@@ -537,7 +676,7 @@ def editar_conta():
 @app.route('/api/dashboard')
 @login_required
 def api_dashboard():
-    produtos = Produto.query.filter_by().all()
+    produtos = Produto.query.filter_by(usuario_id=current_user.id).all()
     def custo_medio(produto):
         compras = [m for m in produto.movimentacoes if m.tipo == 'compra']
         total_qtd = sum(m.quantidade for m in compras)
@@ -547,7 +686,11 @@ def api_dashboard():
     valor_estoque = sum(max(p.quantidade_estoque, 0) * p.preco_compra for p in produtos)
     mes = datetime.now().month
     ano = datetime.now().year
-    vendas = Movimentacao.query.filter_by(tipo='venda').filter(extract('month', Movimentacao.data)==mes, extract('year', Movimentacao.data)==ano).all()
+    vendas = (
+        Movimentacao.query.filter_by(tipo='venda', usuario_id=current_user.id)
+        .filter(extract('month', Movimentacao.data) == mes, extract('year', Movimentacao.data) == ano)
+        .all()
+    )
     margem_lucro = 0
     for venda in vendas:
         produto = Produto.query.get(venda.produto_id)
@@ -573,7 +716,7 @@ def api_dashboard():
 @app.route('/api/produtos')
 @login_required
 def api_produtos():
-    produtos = Produto.query.all()
+    produtos = Produto.query.filter_by(usuario_id=current_user.id).all()
     return jsonify([
         {
             'id': p.id,
@@ -588,7 +731,10 @@ def api_produtos():
 @app.route('/api/movimentacoes')
 @login_required
 def api_movimentacoes():
-    movimentacoes = Movimentacao.query.order_by(Movimentacao.data.desc()).all()
+    movimentacoes = (
+        Movimentacao.query.filter_by(usuario_id=current_user.id)
+        .order_by(Movimentacao.data.desc()).all()
+    )
     return jsonify([
         {
             'id': m.id,
@@ -617,7 +763,7 @@ def debug_usuarios():
 @app.route('/produtos')
 @login_required
 def listar_produtos():
-    produtos = Produto.query.all()
+    produtos = Produto.query.filter_by(usuario_id=current_user.id).all()
     return render_template('produtos.html', produtos=produtos)
 
 @app.route('/inventario')
@@ -669,7 +815,7 @@ def relatorio_geral_completo():
 @app.route('/api/inventario', methods=['GET'])
 @login_required
 def api_inventario():
-    produtos = Produto.query.all()
+    produtos = Produto.query.filter_by(usuario_id=current_user.id).all()
     min_estoque = 5  # Exemplo de mínimo
     max_estoque = 100  # Exemplo de máximo
     return jsonify([
@@ -694,9 +840,10 @@ def api_registrar_movimentacao():
         tipo=data['tipo'],
         quantidade=data['quantidade'],
         valor_unitario=data['valor_unitario'],
-        custo_unitario=data.get('custo_unitario')
+        custo_unitario=data.get('custo_unitario'),
+        usuario_id=current_user.id
     )
-    produto = Produto.query.get(data['produto_id'])
+    produto = Produto.query.filter_by(id=data['produto_id'], usuario_id=current_user.id).first_or_404()
     if data['tipo'] == 'compra':
         produto.quantidade_estoque += data['quantidade']
         produto.preco_compra = data['valor_unitario']
@@ -710,7 +857,7 @@ def api_registrar_movimentacao():
 @app.route('/api/estoque_niveis', methods=['GET'])
 @login_required
 def api_estoque_niveis():
-    produtos = Produto.query.all()
+    produtos = Produto.query.filter_by(usuario_id=current_user.id).all()
     min_estoque = 5  # Exemplo de mínimo
     max_estoque = 100  # Exemplo de máximo
     return jsonify([
@@ -727,7 +874,7 @@ def api_estoque_niveis():
 @login_required
 def api_previsao_demanda():
     from datetime import timedelta
-    produtos = Produto.query.all()
+    produtos = Produto.query.filter_by(usuario_id=current_user.id).all()
     previsao = []
     for p in produtos:
         vendas = [m for m in p.movimentacoes if m.tipo == 'venda']
@@ -763,7 +910,7 @@ def api_marcar_qualidade(produto_id):
 @app.route('/api/analise_estoque', methods=['GET'])
 @login_required
 def api_analise_estoque():
-    produtos = Produto.query.all()
+    produtos = Produto.query.filter_by(usuario_id=current_user.id).all()
     total_estoque = sum(p.quantidade_estoque for p in produtos)
     total_valor = sum(p.quantidade_estoque * p.preco_compra for p in produtos)
     return jsonify({'total_estoque': total_estoque, 'valor_estoque': total_valor})
@@ -778,9 +925,10 @@ def api_registrar_devolucao():
         tipo='devolucao',
         quantidade=data['quantidade'],
         valor_unitario=data['valor_unitario'],
-        custo_unitario=None
+        custo_unitario=None,
+        usuario_id=current_user.id
     )
-    produto = Produto.query.get(data['produto_id'])
+    produto = Produto.query.filter_by(id=data['produto_id'], usuario_id=current_user.id).first_or_404()
     produto.quantidade_estoque += data['quantidade']
     db.session.add(mov)
     db.session.commit()
@@ -791,7 +939,7 @@ def api_registrar_devolucao():
 @app.route('/api/relatorio_estoque', methods=['GET'])
 @login_required
 def api_relatorio_estoque():
-    produtos = Produto.query.all()
+    produtos = Produto.query.filter_by(usuario_id=current_user.id).all()
     relatorio = [
         {
             'id': p.id,
@@ -808,8 +956,8 @@ def api_relatorio_estoque():
 @app.route('/api/relatorio_geral_completo', methods=['GET'])
 @login_required
 def api_relatorio_geral_completo():
-    produtos = Produto.query.all()
-    movimentacoes = Movimentacao.query.all()
+    produtos = Produto.query.filter_by(usuario_id=current_user.id).all()
+    movimentacoes = Movimentacao.query.filter_by(usuario_id=current_user.id).all()
     
     # Métricas básicas
     total_produtos = len(produtos)
@@ -935,8 +1083,8 @@ def api_relatorio_geral_completo():
 @app.route('/relatorio_geral_completo/pdf')
 @login_required
 def relatorio_geral_pdf():
-    produtos = Produto.query.all()
-    movimentacoes = Movimentacao.query.all()
+    produtos = Produto.query.filter_by(usuario_id=current_user.id).all()
+    movimentacoes = Movimentacao.query.filter_by(usuario_id=current_user.id).all()
     from datetime import datetime, timedelta
     # --- Lógica igual ao endpoint /api/relatorio_geral_completo ---
     total_produtos = len(produtos)
@@ -1060,7 +1208,11 @@ def relatorio_geral_pdf():
 @login_required
 def listar_devolucoes():
     """Lista todas as devoluções registradas"""
-    devolucoes = Devolucao.query.order_by(Devolucao.data_devolucao.desc()).all()
+    devolucoes = (
+        Devolucao.query.join(Movimentacao, Devolucao.movimentacao_id == Movimentacao.id)
+        .filter(Movimentacao.usuario_id == current_user.id)
+        .order_by(Devolucao.data_devolucao.desc()).all()
+    )
     total_devolvido = sum(d.valor_devolvido for d in devolucoes)
     total_quantidade = sum(d.quantidade_devolvida for d in devolucoes)
     
@@ -1076,12 +1228,15 @@ def registrar_devolucao():
     form = DevolucaoForm()
     
     # Carregar apenas vendas para o formulário
-    vendas = Movimentacao.query.filter_by(tipo='venda').order_by(Movimentacao.data.desc()).all()
+    vendas = (
+        Movimentacao.query.filter_by(tipo='venda', usuario_id=current_user.id)
+        .order_by(Movimentacao.data.desc()).all()
+    )
     form.movimentacao_id.choices = [(v.id, f"{v.produto.nome} - {v.data.strftime('%d/%m/%Y')} - Qtd: {v.quantidade}") for v in vendas]
     
     if form.validate_on_submit():
         # Buscar a movimentação original
-        movimentacao = Movimentacao.query.get(form.movimentacao_id.data)
+        movimentacao = Movimentacao.query.filter_by(id=form.movimentacao_id.data, usuario_id=current_user.id).first()
         
         if not movimentacao:
             flash('Venda não encontrada!', 'danger')
@@ -1106,7 +1261,7 @@ def registrar_devolucao():
         )
         
         # Atualizar estoque do produto
-        produto = Produto.query.get(movimentacao.produto_id)
+        produto = Produto.query.filter_by(id=movimentacao.produto_id, usuario_id=current_user.id).first_or_404()
         produto.quantidade_estoque += form.quantidade_devolvida.data
         
         # Registrar auditoria
@@ -1145,6 +1300,8 @@ def api_movimentacao_detalhes(movimentacao_id):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+        # Realizar migração leve para colunas adicionadas após a criação inicial do DB
+        ensure_schema_columns()
         try:
             calcular_campos_fiscais_automaticamente()
         except Exception as e:

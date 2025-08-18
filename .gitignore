@@ -6,6 +6,7 @@
 
 # Cache e arquivos temporários
 /__pycache__
+forms_type/__pycache__/*
 
 # Banco de dados local (não versionar)
 /instance/*

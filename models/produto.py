@@ -9,6 +9,8 @@ class Produto(db.Model):
     preco_compra = db.Column(db.Float, nullable=False)  # Preço de compra do produto
     preco_venda = db.Column(db.Float, nullable=False)  # Preço de venda do produto
     quantidade_estoque = db.Column(db.Integer, default=0)  # Quantidade disponível em estoque
+    # Escopo por usuário (multi-tenant simples)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=True)
 
     def __repr__(self):
         return f'<Produto {self.nome}>'  # Representação legível para debug 

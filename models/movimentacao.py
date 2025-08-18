@@ -18,3 +18,5 @@ class Movimentacao(db.Model):
     despesas_comerciais = db.Column(db.Float, default=0.0)  # Despesas comerciais
     data = db.Column(db.DateTime, default=datetime.utcnow)  # Data/hora da movimentação
     produto = db.relationship('Produto', backref='movimentacoes')  # Relacionamento com Produto 
+    # Escopo por usuário (multi-tenant simples)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=True)
