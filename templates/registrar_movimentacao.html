@@ -5,13 +5,13 @@
     <div class="d-flex align-items-center justify-content-between mb-3">
         <div class="d-flex align-items-center" style="gap:10px;">
             {% if current_tipo == 'venda' %}
-                <span class="badge bg-danger text-white" data-bs-toggle="tooltip" title="Venda" style="display:flex; align-items:center; gap:6px; padding:8px 10px;">
-                    <i class="bi bi-cart-check"></i>
+                <span class="badge bg-success text-white" data-bs-toggle="tooltip" title="Venda" style="display:flex; align-items:center; gap:6px; padding:8px 10px;">
+                    <i class="bi bi-cart-check text-white"></i>
                     <span>Venda</span>
                 </span>
             {% else %}
-                <span class="badge bg-primary text-white" data-bs-toggle="tooltip" title="Compra" style="display:flex; align-items:center; gap:6px; padding:8px 10px;">
-                    <i class="bi bi-cart-plus"></i>
+                <span class="badge bg-danger text-white" data-bs-toggle="tooltip" title="Compra" style="display:flex; align-items:center; gap:6px; padding:8px 10px;">
+                    <i class="bi bi-cart-plus text-white"></i>
                     <span>Compra</span>
                 </span>
             {% endif %}
@@ -88,12 +88,12 @@
         const tipo = document.querySelector('[name="tipo"]').value;
         const btn = document.getElementById('btnSubmit');
         const text = btn.querySelector('.btn-text');
-        btn.classList.remove('btn-primary','btn-danger');
+        btn.classList.remove('btn-success','btn-danger');
         if (tipo === 'venda') {
-            btn.classList.add('btn-danger');
+            btn.classList.add('btn-success'); // Verde para venda
             text.textContent = 'Registrar Venda';
         } else {
-            btn.classList.add('btn-primary');
+            btn.classList.add('btn-danger'); // Vermelho para compra
             text.textContent = 'Registrar Compra';
         }
     }
@@ -171,4 +171,4 @@
         btn.querySelector('.spinner-border').classList.remove('d-none');
     });
 </script>
-{% endblock %} 
+{% endblock %}
