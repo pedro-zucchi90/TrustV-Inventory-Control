@@ -9,3 +9,6 @@ from .usuario import Usuario
 from .movimentacao import Movimentacao
 from .auditoria import Auditoria
 from .devolucao import Devolucao 
+from .empresa import Empresa
+from .compartilhamento import CompartilhamentoEmpresa
+from .compartilhamento_usuario import CompartilhamentoUsuario

@@ -1,24 +1,10 @@
-# Configurações e funções para cálculo fiscal do sistema de estoque
-# Este arquivo centraliza as regras de negócio relacionadas a impostos, despesas e CMV (Custo das Mercadorias Vendidas)
-
-# Taxa de impostos sobre vendas (ICMS + PIS/COFINS)
-TAXA_IMPOSTOS_VENDAS = 0.18  # 18% de impostos aplicados sobre o valor total da venda
-
-# Taxa de despesas administrativas (ex: custos de escritório, gestão, etc)
-TAXA_DESPESAS_ADMINISTRATIVAS = 0.02  # 2% do valor da venda
-
-# Taxa de despesas comerciais (ex: marketing, comissão, etc)
-TAXA_DESPESAS_COMERCIAIS = 0.03  # 3% do valor da venda
-
-# Função para calcular o valor total de impostos sobre uma venda
-# Parâmetros:
-#   valor_unitario: valor de venda de uma unidade do produto
-#   quantidade: quantidade de unidades vendidas
-# Retorna: valor total de impostos incidentes sobre a venda
+TAXA_IMPOSTOS_VENDAS = 0.18  # 18%
+TAXA_DESPESAS_ADMINISTRATIVAS = 0.02  # 2%
+TAXA_DESPESAS_COMERCIAIS = 0.03  # 3%
 
 def calcular_impostos_vendas(valor_unitario, quantidade):
-    """Calcula impostos sobre vendas (ICMS + PIS/COFINS)"""
     return valor_unitario * quantidade * TAXA_IMPOSTOS_VENDAS
+# ... outras funções de cálculo ...
 
 # Função para calcular o desconto aplicado em uma venda
 # Parâmetros:

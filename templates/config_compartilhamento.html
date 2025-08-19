@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+  <h3>Compartilhamento de Informações</h3>
+  <p class="text-muted">Somente administradores do site podem ajustar o compartilhamento.</p>
+  <form method="post" class="row g-3 mt-2">
+    <div class="col-md-6">
+      <label class="form-label">Selecionar empresa para compartilhar com a sua</label>
+      <select class="form-select" name="empresa_b_id" required>
+        {% for e in empresas %}
+          {% if e.id != base_id %}
+          <option value="{{ e.id }}">{{ e.nome }} (ID {{ e.id }})</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Ação</label>
+      <select class="form-select" name="acao" required>
+        <option value="ativar">Ativar</option>
+        <option value="desativar">Desativar</option>
+      </select>
+    </div>
+    <div class="col-md-3 d-flex align-items-end">
+      <button class="btn btn-primary w-100" type="submit">Salvar</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+

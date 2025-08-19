@@ -8,12 +8,14 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from models import Usuario
 from models import Auditoria
 from models import Devolucao
+from models import Empresa
 import os
 from werkzeug.utils import secure_filename
 from models import Movimentacao
 from datetime import datetime
 from sqlalchemy import extract, inspect, text
 from forms import CadastroUsuarioForm, EditarUsuarioForm
+from functools import wraps
 # Removido WeasyPrint
 import pdfkit
 from config_fiscal import (
@@ -23,6 +25,8 @@ from config_fiscal import (
     calcular_despesas_comerciais, 
     calcular_cmv
 )
+from sqlalchemy.orm import scoped_session
+from models import Empresa, CompartilhamentoEmpresa, CompartilhamentoUsuario
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -37,6 +41,25 @@ login_manager.login_view = 'login'
 def load_user(user_id):
     return db.session.get(Usuario, int(user_id))
 
+def role_required(*roles):
+    def decorator(view_func):
+        @wraps(view_func)
+        def wrapper(*args, **kwargs):
+            if not current_user.is_authenticated:
+                return redirect(url_for('login'))
+            # site_admin tem acesso total
+            if getattr(current_user, 'role', None) == 'site_admin':
+                return view_func(*args, **kwargs)
+            if current_user.role not in roles:
+                flash('Você não tem permissão para acessar esta funcionalidade.', 'danger')
+                # Redireciona contador para relatórios
+                if getattr(current_user, 'role', None) == 'contador':
+                    return redirect(url_for('relatorio_fiscal'))
+                return redirect(url_for('index'))
+            return view_func(*args, **kwargs)
+        return wrapper
+    return decorator
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
@@ -45,6 +68,10 @@ def login():
         if usuario and usuario.check_password(form.senha.data):
             login_user(usuario)
             flash('Login realizado com sucesso!', 'success')
+            if usuario.role == 'site_admin':
+                return redirect(url_for('index'))
+            if usuario.role == 'contador':
+                return redirect(url_for('relatorio_fiscal'))
             return redirect(url_for('index'))
         else:
             flash('E-mail ou senha incorretos.', 'danger')
@@ -60,8 +87,9 @@ def logout():
 @app.route('/')
 @app.route('/index')
 @login_required
+@role_required('administrador', 'vendedor')
 def index():
-    produtos = Produto.query.filter_by(usuario_id=current_user.id).all()
+    produtos = Produto.query.filter(Produto.empresa_id.in_(empresas_visiveis_ids())).all()
     def custo_medio(produto):
         compras = [m for m in produto.movimentacoes if m.tipo == 'compra']
         total_qtd = sum(m.quantidade for m in compras)
@@ -73,7 +101,7 @@ def index():
     mes = datetime.now().month
     ano = datetime.now().year
     vendas_mes = (
-        Movimentacao.query.filter_by(tipo='venda', usuario_id=current_user.id)
+        Movimentacao.query.filter(Movimentacao.tipo=='venda', Movimentacao.empresa_id.in_(empresas_visiveis_ids()))
         .filter(extract('month', Movimentacao.data) == mes, extract('year', Movimentacao.data) == ano)
         .all()
     )
@@ -144,7 +172,7 @@ def index():
                 })
 
     ultimas_transacoes = (
-        Movimentacao.query.filter_by(usuario_id=current_user.id)
+        Movimentacao.query.filter(Movimentacao.empresa_id.in_(empresas_visiveis_ids()))
         .order_by(Movimentacao.data.desc()).limit(5).all()
     )
 
@@ -200,6 +228,7 @@ def index():
 # Adicionar auditoria ao cadastrar produto
 @app.route('/adicionar', methods=['GET', 'POST'])
 @login_required
+@role_required('administrador', 'vendedor')
 def adicionar_produto():
     form = CadastroProdutoForm()
     if form.validate_on_submit():
@@ -209,7 +238,8 @@ def adicionar_produto():
             preco_compra=float(form.preco_compra.data),
             preco_venda=float(form.preco_venda.data),
             quantidade_estoque=form.quantidade_estoque.data,
-            usuario_id=current_user.id
+            usuario_id=current_user.id,
+            empresa_id=getattr(current_user, 'empresa_id', current_user.id)
         )
         db.session.add(novo_produto)
         db.session.commit()
@@ -221,7 +251,8 @@ def adicionar_produto():
                 quantidade=novo_produto.quantidade_estoque,
                 valor_unitario=novo_produto.preco_compra,
                 custo_unitario=None,
-                usuario_id=current_user.id
+                usuario_id=current_user.id,
+                empresa_id=getattr(current_user, 'empresa_id', current_user.id)
             )
             db.session.add(movimentacao_inicial)
             db.session.commit()
@@ -241,8 +272,9 @@ def adicionar_produto():
 # Adicionar auditoria ao editar produto
 @app.route('/editar/<int:produto_id>', methods=['GET', 'POST'])
 @login_required
+@role_required('administrador', 'vendedor')
 def editar_produto(produto_id):
-    produto = Produto.query.filter_by(id=produto_id, usuario_id=current_user.id).first_or_404()
+    produto = Produto.query.filter_by(id=produto_id, empresa_id=getattr(current_user, 'empresa_id', current_user.id)).first_or_404()
     form = CadastroProdutoForm(obj=produto)
     if form.validate_on_submit():
         produto.nome = form.nome.data
@@ -267,8 +299,9 @@ def editar_produto(produto_id):
 # Adicionar auditoria ao excluir produto
 @app.route('/deletar/<int:produto_id>', methods=['POST'])
 @login_required
+@role_required('administrador')
 def deletar_produto(produto_id):
-    produto = Produto.query.filter_by(id=produto_id, usuario_id=current_user.id).first_or_404()
+    produto = Produto.query.filter_by(id=produto_id, empresa_id=getattr(current_user, 'empresa_id', current_user.id)).first_or_404()
 
     try:
         # Excluir devoluções relacionadas ao produto
@@ -313,7 +346,7 @@ def deletar_produto(produto_id):
 @login_required
 def listar_movimentacoes():
     movimentacoes = (
-        Movimentacao.query.filter_by(usuario_id=current_user.id)
+        Movimentacao.query.filter_by(empresa_id=getattr(current_user, 'empresa_id', current_user.id))
         .order_by(Movimentacao.data.desc()).all()
     )
     return render_template('movimentacoes.html', movimentacoes=movimentacoes)
@@ -321,15 +354,16 @@ def listar_movimentacoes():
 # Adicionar auditoria ao registrar movimentação
 @app.route('/registrar_movimentacao', methods=['GET', 'POST'])
 @login_required
+@role_required('administrador', 'vendedor')
 def registrar_movimentacao():
     tipo_param = request.args.get('tipo')
     form = MovimentacaoForm()
     if tipo_param in ['compra', 'venda'] and request.method == 'GET':
         form.tipo.data = tipo_param
-    produtos_usuario = Produto.query.filter_by(usuario_id=current_user.id).all()
+    produtos_usuario = Produto.query.filter(Produto.empresa_id.in_(empresas_visiveis_ids())).all()
     form.produto_id.choices = [(p.id, p.nome) for p in produtos_usuario]
     if form.validate_on_submit():
-        produto = Produto.query.filter_by(id=form.produto_id.data, usuario_id=current_user.id).first_or_404()
+        produto = Produto.query.filter_by(id=form.produto_id.data, empresa_id=getattr(current_user, 'empresa_id', current_user.id)).first_or_404()
         if form.tipo.data == 'venda':
             if form.quantidade.data > produto.quantidade_estoque:
                 flash('Não é possível vender mais do que o estoque disponível!', 'danger')
@@ -345,10 +379,10 @@ def registrar_movimentacao():
             
             #buscar compras ordenadas por data (mais antigas primeiro) e preço (menor primeiro)
             compras = (
-                Movimentacao.query.filter_by(
-                    produto_id=form.produto_id.data,
-                    tipo='compra',
-                    usuario_id=current_user.id
+                Movimentacao.query.filter(
+                    Movimentacao.produto_id==form.produto_id.data,
+                    Movimentacao.tipo=='compra',
+                    Movimentacao.empresa_id.in_(empresas_visiveis_ids())
                 )
                 .order_by(Movimentacao.data.asc())
                 .all()
@@ -404,7 +438,8 @@ def registrar_movimentacao():
             cmv=cmv,
             despesas_administrativas=despesas_administrativas,
             despesas_comerciais=despesas_comerciais,
-            usuario_id=current_user.id
+            usuario_id=current_user.id,
+            empresa_id=getattr(current_user, 'empresa_id', current_user.id)
         )
         if form.tipo.data == 'compra':
             produto.quantidade_estoque += form.quantidade.data
@@ -439,12 +474,13 @@ def registrar_movimentacao():
 
 @app.route('/relatorio_fiscal')
 @login_required
+@role_required('administrador', 'contador')
 def relatorio_fiscal():
     # Margem de lucro do mês atual
     mes = datetime.now().month
     ano = datetime.now().year
     vendas = (
-        Movimentacao.query.filter_by(tipo='venda', usuario_id=current_user.id)
+        Movimentacao.query.filter(Movimentacao.tipo=='venda', Movimentacao.empresa_id.in_(empresas_visiveis_ids()))
         .filter(extract('month', Movimentacao.data) == mes, extract('year', Movimentacao.data) == ano)
         .all()
     )
@@ -472,11 +508,12 @@ def relatorio_fiscal():
 
 @app.route('/exportar_relatorio_fiscal')
 @login_required
+@role_required('administrador', 'contador')
 def exportar_relatorio_fiscal():
     mes = datetime.now().month
     ano = datetime.now().year
     vendas = (
-        Movimentacao.query.filter_by(tipo='venda', usuario_id=current_user.id)
+        Movimentacao.query.filter(Movimentacao.tipo=='venda', Movimentacao.empresa_id.in_(empresas_visiveis_ids()))
         .filter(extract('month', Movimentacao.data) == mes, extract('year', Movimentacao.data) == ano)
         .all()
     )
@@ -563,6 +600,14 @@ def ensure_schema_columns():
             db.session.commit()
     except Exception:
         db.session.rollback()
+    # movimentacao.empresa_id
+    try:
+        mov_cols = {col['name'] for col in inspector.get_columns('movimentacao')}
+        if 'empresa_id' not in mov_cols:
+            db.session.execute(text('ALTER TABLE movimentacao ADD COLUMN empresa_id INTEGER'))
+            db.session.commit()
+    except Exception:
+        db.session.rollback()
         
     # devolucao.usuario_id (opcional, para bases antigas)
     try:
@@ -573,12 +618,135 @@ def ensure_schema_columns():
     except Exception:
         db.session.rollback()
 
+    # produto.empresa_id
+    try:
+        produto_cols = {col['name'] for col in inspector.get_columns('produto')}
+        if 'empresa_id' not in produto_cols:
+            db.session.execute(text('ALTER TABLE produto ADD COLUMN empresa_id INTEGER'))
+            db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    # usuario.empresa_id
+    try:
+        usuario_cols = {col['name'] for col in inspector.get_columns('usuario')}
+        if 'empresa_id' not in usuario_cols:
+            db.session.execute(text('ALTER TABLE usuario ADD COLUMN empresa_id INTEGER'))
+            db.session.commit()
+        if 'role' not in usuario_cols:
+            db.session.execute(text("ALTER TABLE usuario ADD COLUMN role VARCHAR(50) DEFAULT 'vendedor'"))
+            db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    # compartilhamento_empresa (criação de tabela se não existe)
+    try:
+        db.session.execute(text('SELECT 1 FROM compartilhamento_empresa LIMIT 1'))
+    except Exception:
+        try:
+            db.session.execute(text(
+                'CREATE TABLE IF NOT EXISTS compartilhamento_empresa ('
+                'id INTEGER PRIMARY KEY, '
+                'empresa_a_id INTEGER NOT NULL, '
+                'empresa_b_id INTEGER NOT NULL, '
+                'ativo BOOLEAN DEFAULT 1, '
+                'CONSTRAINT uq_compartilhamento_empresas UNIQUE (empresa_a_id, empresa_b_id)'
+                ')' 
+            ))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+    # compartilhamento_usuario (criação de tabela se não existe)
+    try:
+        db.session.execute(text('SELECT 1 FROM compartilhamento_usuario LIMIT 1'))
+    except Exception:
+        try:
+            db.session.execute(text(
+                'CREATE TABLE IF NOT EXISTS compartilhamento_usuario ('
+                'id INTEGER PRIMARY KEY, '
+                'usuario_a_id INTEGER NOT NULL, '
+                'usuario_b_id INTEGER NOT NULL, '
+                "escopo VARCHAR(50) DEFAULT 'all', "
+                'ativo BOOLEAN DEFAULT 1, '
+                'CONSTRAINT uq_compartilhamento_usuarios UNIQUE (usuario_a_id, usuario_b_id)'
+                ')'
+            ))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+def empresas_visiveis_ids():
+    """Retorna lista de empresa_ids visíveis para o usuário atual: própria + compartilhadas bidirecionalmente ativas."""
+    if not current_user.is_authenticated:
+        return []
+    base_id = getattr(current_user, 'empresa_id', current_user.id)
+    ids = {base_id}
+    ativos_emp = CompartilhamentoEmpresa.query.filter_by(ativo=True).all()
+    for c in ativos_emp:
+        if c.empresa_a_id == base_id:
+            ids.add(c.empresa_b_id)
+        if c.empresa_b_id == base_id:
+            ids.add(c.empresa_a_id)
+    # Compartilhamentos por usuário também ampliam a visibilidade para a empresa do par
+    ativos_usr = CompartilhamentoUsuario.query.filter_by(ativo=True).all()
+    for cu in ativos_usr:
+        if cu.usuario_a_id == current_user.id:
+            other = db.session.get(Usuario, cu.usuario_b_id)
+            if other and other.empresa_id:
+                ids.add(other.empresa_id)
+        if cu.usuario_b_id == current_user.id:
+            other = db.session.get(Usuario, cu.usuario_a_id)
+            if other and other.empresa_id:
+                ids.add(other.empresa_id)
+    return list(ids)
+
+def seed_site_admin():
+    """Cria usuário admin do site (não registrável) caso não exista."""
+    from os import getenv
+    email = getenv('SITE_ADMIN_EMAIL', 'site.admin@trustv.local')
+    senha = getenv('SITE_ADMIN_PASSWORD', 'admin123')
+    admin = Usuario.query.filter_by(email=email).first()
+    if not admin:
+        admin = Usuario(nome='Site Admin', email=email, role='site_admin', empresa_id=None)
+        admin.set_password(senha)
+        db.session.add(admin)
+        db.session.commit()
+
+@app.route('/config/compartilhamento', methods=['GET', 'POST'])
+@login_required
+@role_required('site_admin')
+def config_compartilhamento():
+    if request.method == 'POST':
+        try:
+            empresa_b_id = int(request.form.get('empresa_b_id'))
+        except Exception:
+            flash('Empresa inválida.', 'danger')
+            return redirect(url_for('config_compartilhamento'))
+        acao = request.form.get('acao')  # 'ativar' ou 'desativar'
+        base_id = getattr(current_user, 'empresa_id', current_user.id)
+        if empresa_b_id == base_id:
+            flash('Selecione uma empresa diferente da sua.', 'warning')
+            return redirect(url_for('config_compartilhamento'))
+        rel = CompartilhamentoEmpresa.query.filter_by(empresa_a_id=base_id, empresa_b_id=empresa_b_id).first()
+        if not rel:
+            rel = CompartilhamentoEmpresa(empresa_a_id=base_id, empresa_b_id=empresa_b_id, ativo=(acao == 'ativar'))
+            db.session.add(rel)
+        else:
+            rel.ativo = (acao == 'ativar')
+        db.session.commit()
+        flash('Configuração de compartilhamento atualizada.', 'success')
+        return redirect(url_for('config_compartilhamento'))
+    empresas = Empresa.query.all()
+    base_id = getattr(current_user, 'empresa_id', current_user.id)
+    return render_template('config_compartilhamento.html', empresas=empresas, base_id=base_id)
+
 @app.context_processor
 def inject_alertas_fiscais():
     alertas = []
     if current_user.is_authenticated:
         vendas = (
-            Movimentacao.query.filter_by(tipo='venda', usuario_id=current_user.id)
+            Movimentacao.query.filter(Movimentacao.tipo=='venda', Movimentacao.empresa_id.in_(empresas_visiveis_ids()))
             .order_by(Movimentacao.data.desc()).limit(20).all()
         )
         for venda in vendas:
@@ -589,6 +757,7 @@ def inject_alertas_fiscais():
 
 @app.route('/recalcular_fiscais')
 @login_required
+@role_required('administrador')
 def recalcular_fiscais():
     """Rota para recalcular campos fiscais manualmente"""
     try:
@@ -600,14 +769,16 @@ def recalcular_fiscais():
 
 @app.route('/auditoria')
 @login_required
+@role_required('administrador')
 def auditoria():
     logs = Auditoria.query.order_by(Auditoria.data.desc()).limit(100).all()
     return render_template('auditoria.html', logs=logs)
 
 @app.route('/api/preco_medio_produtos')
 @login_required
+@role_required('administrador', 'vendedor')
 def api_preco_medio_produtos():
-    produtos = Produto.query.filter_by(usuario_id=current_user.id).all()
+    produtos = Produto.query.filter_by(empresa_id=getattr(current_user, 'empresa_id', current_user.id)).all()
     resultado = []
     for produto in produtos:
         compras = [m for m in produto.movimentacoes if m.tipo == 'compra']
@@ -624,8 +795,9 @@ def api_preco_medio_produtos():
 
 @app.route('/api/preco_medio_geral')
 @login_required
+@role_required('administrador', 'vendedor')
 def api_preco_medio_geral():
-    produtos = Produto.query.filter_by(usuario_id=current_user.id).all()
+    produtos = Produto.query.filter_by(empresa_id=getattr(current_user, 'empresa_id', current_user.id)).all()
     total_qtd = 0
     total_valor = 0
     for produto in produtos:
@@ -642,9 +814,20 @@ def registrar():
         if Usuario.query.filter_by(email=form.email.data).first():
             flash('Este e-mail já está cadastrado.', 'danger')
             return redirect(url_for('registrar'))
+        # Criar/associar empresa simples pelo nome informado (se houver campo)
+        empresa_nome = getattr(form, 'empresa', None).data if hasattr(form, 'empresa') else None
+        empresa = None
+        if empresa_nome:
+            empresa = Empresa.query.filter_by(nome=empresa_nome).first()
+            if not empresa:
+                empresa = Empresa(nome=empresa_nome)
+                db.session.add(empresa)
+                db.session.flush()
         usuario = Usuario(
             nome=form.nome.data,
-            email=form.email.data
+            email=form.email.data,
+            role=(getattr(form, 'role', None).data if hasattr(form, 'role') else 'vendedor'),
+            empresa_id=(empresa.id if empresa else None)
         )
         usuario.set_password(form.senha.data)
         db.session.add(usuario)
@@ -676,8 +859,9 @@ def editar_conta():
 
 @app.route('/api/dashboard')
 @login_required
+@role_required('administrador', 'vendedor')
 def api_dashboard():
-    produtos = Produto.query.filter_by(usuario_id=current_user.id).all()
+    produtos = Produto.query.filter(Produto.empresa_id.in_(empresas_visiveis_ids())).all()
     def custo_medio(produto):
         compras = [m for m in produto.movimentacoes if m.tipo == 'compra']
         total_qtd = sum(m.quantidade for m in compras)
@@ -688,7 +872,7 @@ def api_dashboard():
     mes = datetime.now().month
     ano = datetime.now().year
     vendas = (
-        Movimentacao.query.filter_by(tipo='venda', usuario_id=current_user.id)
+        Movimentacao.query.filter(Movimentacao.tipo=='venda', Movimentacao.empresa_id.in_(empresas_visiveis_ids()))
         .filter(extract('month', Movimentacao.data) == mes, extract('year', Movimentacao.data) == ano)
         .all()
     )
@@ -710,14 +894,17 @@ def api_dashboard():
         'usuario': {
             'nome': current_user.nome,
             'email': current_user.email,
-            'foto_perfil': current_user.foto_perfil
+            'foto_perfil': current_user.foto_perfil,
+            'role': getattr(current_user, 'role', None),
+            'empresa_id': getattr(current_user, 'empresa_id', None)
         }
     })
 
 @app.route('/api/produtos')
 @login_required
+@role_required('administrador', 'vendedor')
 def api_produtos():
-    produtos = Produto.query.filter_by(usuario_id=current_user.id).all()
+    produtos = Produto.query.filter(Produto.empresa_id.in_(empresas_visiveis_ids())).all()
     return jsonify([
         {
             'id': p.id,
@@ -731,9 +918,10 @@ def api_produtos():
 
 @app.route('/api/movimentacoes')
 @login_required
+@role_required('administrador', 'vendedor')
 def api_movimentacoes():
     movimentacoes = (
-        Movimentacao.query.filter_by(usuario_id=current_user.id)
+        Movimentacao.query.filter(Movimentacao.empresa_id.in_(empresas_visiveis_ids()))
         .order_by(Movimentacao.data.desc()).all()
     )
     return jsonify([
@@ -763,52 +951,62 @@ def debug_usuarios():
 
 @app.route('/produtos')
 @login_required
+@role_required('administrador', 'vendedor')
 def listar_produtos():
-    produtos = Produto.query.filter_by(usuario_id=current_user.id).all()
+    produtos = Produto.query.filter(Produto.empresa_id.in_(empresas_visiveis_ids())).all()
     return render_template('produtos.html', produtos=produtos)
 
 @app.route('/inventario')
 @login_required
+@role_required('administrador', 'vendedor')
 def inventario():
     return render_template('inventario.html')
 
 @app.route('/previsao_demanda')
 @login_required
+@role_required('administrador', 'vendedor')
 def previsao_demanda():
     return render_template('previsao_demanda.html')
 
 @app.route('/estoque_niveis')
 @login_required
+@role_required('administrador', 'vendedor')
 def estoque_niveis():
     return render_template('estoque_niveis.html')
 
 @app.route('/fornecedores')
 @login_required
+@role_required('administrador', 'vendedor')
 def fornecedores():
     return render_template('fornecedores.html')
 
 @app.route('/qualidade')
 @login_required
+@role_required('administrador', 'vendedor')
 def qualidade():
     return render_template('qualidade.html')
 
 @app.route('/analise_dados')
 @login_required
+@role_required('administrador', 'vendedor')
 def analise_dados():
     return render_template('analise_dados.html')
 
 @app.route('/logistica_reversa')
 @login_required
+@role_required('administrador', 'vendedor')
 def logistica_reversa():
     return render_template('logistica_reversa.html')
 
 @app.route('/relatorio_estoque')
 @login_required
+@role_required('administrador', 'contador')
 def relatorio_estoque():
     return render_template('relatorio_estoque.html')
 
 @app.route('/relatorio_geral_completo')
 @login_required
+@role_required('administrador', 'contador')
 def relatorio_geral_completo():
     return render_template('relatorio_geral_completo.html')
 
@@ -816,7 +1014,7 @@ def relatorio_geral_completo():
 @app.route('/api/inventario', methods=['GET'])
 @login_required
 def api_inventario():
-    produtos = Produto.query.filter_by(usuario_id=current_user.id).all()
+    produtos = Produto.query.filter(Produto.empresa_id.in_(empresas_visiveis_ids())).all()
     min_estoque = 5  # Exemplo de mínimo
     max_estoque = 100  # Exemplo de máximo
     return jsonify([
@@ -842,9 +1040,10 @@ def api_registrar_movimentacao():
         quantidade=data['quantidade'],
         valor_unitario=data['valor_unitario'],
         custo_unitario=data.get('custo_unitario'),
-        usuario_id=current_user.id
+        usuario_id=current_user.id,
+        empresa_id=getattr(current_user, 'empresa_id', current_user.id)
     )
-    produto = Produto.query.filter_by(id=data['produto_id'], usuario_id=current_user.id).first_or_404()
+    produto = Produto.query.filter_by(id=data['produto_id'], empresa_id=getattr(current_user, 'empresa_id', current_user.id)).first_or_404()
     if data['tipo'] == 'compra':
         produto.quantidade_estoque += data['quantidade']
         produto.preco_compra = data['valor_unitario']
@@ -858,7 +1057,7 @@ def api_registrar_movimentacao():
 @app.route('/api/estoque_niveis', methods=['GET'])
 @login_required
 def api_estoque_niveis():
-    produtos = Produto.query.filter_by(usuario_id=current_user.id).all()
+    produtos = Produto.query.filter(Produto.empresa_id.in_(empresas_visiveis_ids())).all()
     min_estoque = 5  # Exemplo de mínimo
     max_estoque = 100  # Exemplo de máximo
     return jsonify([
@@ -875,7 +1074,7 @@ def api_estoque_niveis():
 @login_required
 def api_previsao_demanda():
     from datetime import timedelta
-    produtos = Produto.query.filter_by(usuario_id=current_user.id).all()
+    produtos = Produto.query.filter(Produto.empresa_id.in_(empresas_visiveis_ids())).all()
     previsao = []
     for p in produtos:
         vendas = [m for m in p.movimentacoes if m.tipo == 'venda']
@@ -927,9 +1126,10 @@ def api_registrar_devolucao():
         quantidade=data['quantidade'],
         valor_unitario=data['valor_unitario'],
         custo_unitario=None,
-        usuario_id=current_user.id
+        usuario_id=current_user.id,
+        empresa_id=getattr(current_user, 'empresa_id', current_user.id)
     )
-    produto = Produto.query.filter_by(id=data['produto_id'], usuario_id=current_user.id).first_or_404()
+    produto = Produto.query.filter_by(id=data['produto_id'], empresa_id=getattr(current_user, 'empresa_id', current_user.id)).first_or_404()
     produto.quantidade_estoque += data['quantidade']
     db.session.add(mov)
     db.session.commit()
@@ -940,7 +1140,7 @@ def api_registrar_devolucao():
 @app.route('/api/relatorio_estoque', methods=['GET'])
 @login_required
 def api_relatorio_estoque():
-    produtos = Produto.query.filter_by(usuario_id=current_user.id).all()
+    produtos = Produto.query.filter(Produto.empresa_id.in_(empresas_visiveis_ids())).all()
     relatorio = [
         {
             'id': p.id,
@@ -957,8 +1157,8 @@ def api_relatorio_estoque():
 @app.route('/api/relatorio_geral_completo', methods=['GET'])
 @login_required
 def api_relatorio_geral_completo():
-    produtos = Produto.query.filter_by(usuario_id=current_user.id).all()
-    movimentacoes = Movimentacao.query.filter_by(usuario_id=current_user.id).all()
+    produtos = Produto.query.filter(Produto.empresa_id.in_(empresas_visiveis_ids())).all()
+    movimentacoes = Movimentacao.query.filter(Movimentacao.empresa_id.in_(empresas_visiveis_ids())).all()
     
     # Métricas básicas
     total_produtos = len(produtos)
@@ -1084,8 +1284,8 @@ def api_relatorio_geral_completo():
 @app.route('/relatorio_geral_completo/pdf')
 @login_required
 def relatorio_geral_pdf():
-    produtos = Produto.query.filter_by(usuario_id=current_user.id).all()
-    movimentacoes = Movimentacao.query.filter_by(usuario_id=current_user.id).all()
+    produtos = Produto.query.filter(Produto.empresa_id.in_(empresas_visiveis_ids())).all()
+    movimentacoes = Movimentacao.query.filter(Movimentacao.empresa_id.in_(empresas_visiveis_ids())).all()
     from datetime import datetime, timedelta
     # --- Lógica igual ao endpoint /api/relatorio_geral_completo ---
     total_produtos = len(produtos)
@@ -1211,7 +1411,7 @@ def listar_devolucoes():
     """Lista todas as devoluções registradas"""
     devolucoes = (
         Devolucao.query.join(Movimentacao, Devolucao.movimentacao_id == Movimentacao.id)
-        .filter(Movimentacao.usuario_id == current_user.id)
+        .filter(Movimentacao.empresa_id.in_(empresas_visiveis_ids()))
         .order_by(Devolucao.data_devolucao.desc()).all()
     )
     total_devolvido = sum(d.valor_devolvido for d in devolucoes)
@@ -1230,14 +1430,14 @@ def registrar_devolucao():
     
     # Carregar apenas vendas para o formulário
     vendas = (
-        Movimentacao.query.filter_by(tipo='venda', usuario_id=current_user.id)
+        Movimentacao.query.filter(Movimentacao.tipo=='venda', Movimentacao.empresa_id.in_(empresas_visiveis_ids()))
         .order_by(Movimentacao.data.desc()).all()
     )
     form.movimentacao_id.choices = [(v.id, f"{v.produto.nome} - {v.data.strftime('%d/%m/%Y')} - Qtd: {v.quantidade}") for v in vendas]
     
     if form.validate_on_submit():
         # Buscar a movimentação original
-        movimentacao = Movimentacao.query.filter_by(id=form.movimentacao_id.data, usuario_id=current_user.id).first()
+        movimentacao = Movimentacao.query.filter(Movimentacao.id==form.movimentacao_id.data, Movimentacao.empresa_id.in_(empresas_visiveis_ids())).first()
         
         if not movimentacao:
             flash('Venda não encontrada!', 'danger')
@@ -1262,7 +1462,7 @@ def registrar_devolucao():
         )
         
         # Atualizar estoque do produto
-        produto = Produto.query.filter_by(id=movimentacao.produto_id, usuario_id=current_user.id).first_or_404()
+        produto = Produto.query.filter(Produto.id==movimentacao.produto_id, Produto.empresa_id.in_(empresas_visiveis_ids())).first_or_404()
         produto.quantidade_estoque += form.quantidade_devolvida.data
         
         # Registrar auditoria
@@ -1303,6 +1503,8 @@ if __name__ == '__main__':
         db.create_all()
         # Realizar migração leve para colunas adicionadas após a criação inicial do DB
         ensure_schema_columns()
+        # Seed do administrador do site (não registrável)
+        seed_site_admin()
         try:
             calcular_campos_fiscais_automaticamente()
         except Exception as e:

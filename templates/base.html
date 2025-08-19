@@ -16,14 +16,21 @@
             <img src="{{ url_for('static', filename='img/logoinventory.png') }}" alt="Logo" style="max-width: 180px; max-height: 120px; display: block; margin: 0 auto 8px auto;">
         </div>
         <nav style="position: relative;">
+            {% if current_user.role == 'site_admin' %}
+            <a href="{{ url_for('config_compartilhamento') }}" class="{% if request.endpoint == 'config_compartilhamento' %}active nav-current{% endif %}"><i class="bi bi-people"></i> Compartilhamento</a>
+            {% endif %}
+            {% if current_user.role in ['administrador', 'vendedor'] %}
             <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}active nav-current{% endif %}"><i class="bi bi-speedometer2"></i> Dashboard</a>
             <a href="{{ url_for('listar_produtos') }}" class="{% if request.endpoint == 'listar_produtos' %}active nav-current{% endif %}"><i class="bi bi-box-seam"></i> Produtos</a>
             <a href="{{ url_for('registrar_movimentacao', tipo='compra') }}" class="{% if request.endpoint == 'registrar_movimentacao' and request.args.get('tipo') == 'compra' %}active nav-current{% endif %}"><i class="bi bi-cart-plus"></i> Compras</a>
             <a href="{{ url_for('registrar_movimentacao', tipo='venda') }}" class="{% if request.endpoint == 'registrar_movimentacao' and request.args.get('tipo') == 'venda' %}active nav-current{% endif %}"><i class="bi bi-cart-check"></i> Vendas</a>
             <a href="{{ url_for('listar_devolucoes') }}" class="{% if request.endpoint == 'listar_devolucoes' %}active nav-current{% endif %}"><i class="bi bi-arrow-return-left"></i> Devoluções</a>
             <a href="{{ url_for('listar_movimentacoes') }}" class="{% if request.endpoint == 'listar_movimentacoes' %}active nav-current{% endif %}"><i class="bi bi-clock-history"></i> Histórico de Movimentações</a>
+            {% endif %}
+            {% if current_user.role in ['administrador', 'contador'] %}
             <a href="{{ url_for('relatorio_fiscal') }}" class="{% if request.endpoint == 'relatorio_fiscal' %}active nav-current{% endif %}"><i class="bi bi-file-earmark-bar-graph"></i> Relatório Fiscal</a>
             <a href="{{ url_for('relatorio_geral_completo') }}" class="{% if request.endpoint == 'relatorio_geral_completo' %}active nav-current{% endif %}"><i class="bi bi-file-earmark-text"></i> Relatório Completo</a>
+            {% endif %}
         </nav>
         <!-- Removido o botão Minha Conta -->
         <form action="{{ url_for('logout') }}" method="post" class="mt-auto">
@@ -38,6 +45,7 @@
                         <img src="{{ url_for('static', filename=current_user.foto_perfil) if current_user.is_authenticated and current_user.foto_perfil else 'https://ui-avatars.com/api/?name=' + (current_user.nome if current_user.is_authenticated else 'Usuário') }}" class="avatar" alt="Avatar">
                         <div>
                             <div class="name">{{ current_user.nome if current_user.is_authenticated else 'Visitante' }}</div>
+                            <div class="small text-muted">{{ (current_user.role|default('vendedor')) }}</div>
                         </div>
                     </a>
                 </div>

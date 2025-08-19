@@ -1,6 +1,6 @@
 # Formulários principais do sistema (usuário, edição de conta, etc)
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, FileField
+from wtforms import StringField, PasswordField, SubmitField, FileField, SelectField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional
 
 # Importar formulários específicos para produtos, login, movimentação e devolução
@@ -15,6 +15,8 @@ class CadastroUsuarioForm(FlaskForm):
     email = StringField('E-mail', validators=[DataRequired(), Email()])  # E-mail válido
     senha = PasswordField('Senha', validators=[DataRequired(), Length(min=6)])  # Senha (mínimo 6 caracteres)
     confirmar_senha = PasswordField('Confirmar Senha', validators=[DataRequired(), EqualTo('senha', message='As senhas devem coincidir.')])  # Confirmação
+    empresa = StringField('Empresa', validators=[Optional(), Length(min=2, max=100)])
+    role = SelectField('Perfil', choices=[('vendedor','Vendedor'), ('administrador','Administrador'), ('contador','Contador')], validators=[Optional()])
     submit = SubmitField('Registrar')  # Botão de envio
 
 class EditarUsuarioForm(FlaskForm):
