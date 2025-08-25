@@ -19,6 +19,11 @@ body {
     flex-direction: column;
     z-index: 100;
     box-shadow: 2px 0 12px 0 rgba(0,0,0,0.3);
+    min-width: 180px;      /* Nunca menor que 180px */
+    max-width: 100vw;
+    overflow-x: auto;
+    box-sizing: border-box;
+    word-break: break-word;
 }
 .sidebar .logo {
     font-size: 1.4rem;
@@ -26,6 +31,9 @@ body {
     padding: 32px 24px 16px 24px;
     letter-spacing: 1px;
     color: #fff;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 .sidebar nav {
     flex: 1;
@@ -45,6 +53,9 @@ body {
     font-size: 1rem;
     transition: background 0.2s, color 0.2s;
     font-weight: 500;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 .sidebar nav a.active, .sidebar nav a:hover {
     background: #2d3748;
@@ -411,7 +422,10 @@ body {
 /* Responsividade */
 @media (max-width: 1100px) {
     .cards { flex-direction: column; }
-    .sidebar { width: 100px; }
+    .sidebar {
+        min-width: 120px;
+        width: 100px;
+    }
     .topbar { margin-left: 100px; }
 }
 @media (max-width: 800px) {
@@ -613,7 +627,6 @@ input:required:valid, select:required:valid, textarea:required:valid {
     transform: translateY(-2px) scale(1.03);
 }
 
-/* Botões das ações rápidas na dashboard */
 .row .btn.w-100.mb-2 {
     min-height: 56px;
     font-size: 1.08rem;
@@ -624,7 +637,6 @@ input:required:valid, select:required:valid, textarea:required:valid {
     padding: 10px 0 !important;
 }
 
-/* Para garantir que todos os botões das ações rápidas fiquem do mesmo tamanho, mesmo com textos diferentes */
 @media (max-width: 800px) {
     .row .btn.w-100.mb-2 {
         min-height: 48px;
@@ -765,3 +777,44 @@ input:required:valid, select:required:valid, textarea:required:valid {
 .login-dark a, .register-dark a, .container.login-dark a, .container.register-dark a {
     color: #60a5fa !important;
 } 
+
+.acoes-rapidas {
+    justify-content: flex-start;
+}
+@media (max-width: 600px) {
+    .acoes-rapidas .btn-acao {
+        min-width: 100% !important;
+    }
+}
+
+/* Sidebar: impede que fique estreita demais e o conteúdo saia para fora */
+.sidebar {
+    min-width: 180px;      /* Nunca menor que 180px */
+    width: 230px;
+    max-width: 100vw;
+    overflow-x: auto;
+    box-sizing: border-box;
+    word-break: break-word;
+}
+
+/* Garante que o texto e logo quebrem linha se necessário */
+.sidebar .logo {
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Ajuste para textos dos links da sidebar não saírem para fora */
+.sidebar nav a {
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Em telas menores, mantém largura mínima para sidebar */
+@media (max-width: 1100px) {
+    .sidebar {
+        min-width: 120px;
+        width: 100px;
+    }
+}
