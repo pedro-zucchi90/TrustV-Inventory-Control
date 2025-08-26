@@ -27,3 +27,14 @@ class EditarUsuarioForm(FlaskForm):
     confirmar_senha = PasswordField('Confirmar Nova Senha', validators=[Optional(), EqualTo('senha', message='As senhas devem coincidir.')])  # Confirmação
     foto_perfil = FileField('Foto de Perfil', validators=[Optional()])  # Upload de foto de perfil
     submit = SubmitField('Salvar Alterações')  # Botão de envio 
+
+
+class EmpresaForm(FlaskForm):
+    """Formulário para criação/edição de Empresa (restrito ao site_admin).
+
+    Este formulário é utilizado nas telas de gestão de empresas para
+    criar novas organizações ou editar dados existentes.
+    """
+    nome = StringField('Nome da Empresa', validators=[DataRequired(), Length(min=2, max=150)])
+    cnpj = StringField('CNPJ', validators=[Optional(), Length(min=11, max=32)])
+    submit = SubmitField('Salvar')
