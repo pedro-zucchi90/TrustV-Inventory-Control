@@ -18,7 +18,3 @@ models/__pycache__/*
 
 # Diretório duplicado (não versionar)
 /TrustV-Inventory-Control/
-
-# Scripts de seed (não versionar em produção)
-/seed_admin.py
-/create_admin.py
