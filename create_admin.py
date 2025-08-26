@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Script simples para criar usuário administrador do sistema (site_admin)
 Uso: python create_admin.py
@@ -30,7 +29,7 @@ def main():
             # Cria o usuário administrador do sistema
             admin = Usuario(
                 nome='Site Admin',
-                email='site.admin@trustv.local',
+                email='site.admin@trustv.local.com',
                 role='site_admin',
                 empresa_id=None  # site_admin não pertence a uma empresa específica
             )
@@ -40,11 +39,11 @@ def main():
             db.session.commit()
             
             print("✅ Usuário administrador do sistema criado com sucesso!")
-            print(f"   📧 Email: site.admin@trustv.local")
-            print(f"   🔑 Senha: admin123")
-            print(f"   👤 Nome: Site Admin")
-            print(f"   🔐 Role: site_admin (acesso total ao sistema)")
-            print(f"   🏢 Empresa: Nenhuma (acesso global)")
+            print("   📧 Email: site.admin@trustv.local.com")
+            print("   🔑 Senha: admin123")
+            print("   👤 Nome: Site Admin")
+            print("   🔐 Role: site_admin (acesso total ao sistema)")
+            print("   🏢 Empresa: Nenhuma (acesso global)")
             print("\n⚠️  IMPORTANTE: Altere a senha após o primeiro login!")
             print("\n💡 Este usuário tem acesso total ao sistema, incluindo:")
             print("   • Configuração de compartilhamento entre empresas")
