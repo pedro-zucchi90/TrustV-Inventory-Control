@@ -15,3 +15,6 @@ models/__pycache__/*
 
 # Fotos de perfil dos usuários (não versionar)
 /static/profile_pics/
+
+# Diretório duplicado (não versionar)
+/TrustV-Inventory-Control/
