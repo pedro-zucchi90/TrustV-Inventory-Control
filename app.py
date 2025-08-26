@@ -69,7 +69,7 @@ def login():
             login_user(usuario)
             flash('Login realizado com sucesso!', 'success')
             if usuario.role == 'site_admin':
-                return redirect(url_for('index'))
+                return redirect(url_for('config_compartilhamento'))
             if usuario.role == 'contador':
                 return redirect(url_for('relatorio_fiscal'))
             return redirect(url_for('index'))

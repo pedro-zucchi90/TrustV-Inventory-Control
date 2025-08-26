@@ -2,7 +2,7 @@
 {% block content_public %}
 <div class="container mt-5 login-dark" style="max-width: 400px; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.35); padding: 32px 24px;">
     <h2 class="mb-4" style="color: #fff;">Entrar no Sistema</h2>
-    <form method="POST">
+    <form method="POST" id="loginForm">
         {{ form.hidden_tag() }}
         <div class="mb-3">
             {{ form.email.label(class="form-label", style="color:#fff;") }}
