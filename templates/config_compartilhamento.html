@@ -3,6 +3,7 @@
 <div class="container">
   <h3>Compartilhamento de Informações</h3>
   <p class="text-muted">Somente administradores do site podem ajustar o compartilhamento.</p>
+  <!-- Empresa ↔ Empresa -->
   <form method="post" class="row g-3 mt-2">
     <div class="col-md-6">
       <label class="form-label">Selecionar empresa para compartilhar com a sua</label>
@@ -25,6 +26,117 @@
       <button class="btn btn-primary w-100" type="submit">Salvar</button>
     </div>
   </form>
+
+  <hr class="my-4"/>
+
+  <!-- Usuário ↔ Usuário -->
+  <form method="post" class="row g-3 mt-2">
+    <div class="col-md-4">
+      <label class="form-label">Usuário A</label>
+      <select class="form-select" name="usuario_a_id" required>
+        {% for u in usuarios %}
+          <option value="{{ u.id }}">{{ u.nome }} ({{ u.email }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Usuário B</label>
+      <select class="form-select" name="usuario_b_id" required>
+        {% for u in usuarios %}
+          <option value="{{ u.id }}">{{ u.nome }} ({{ u.email }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Escopo</label>
+      <select class="form-select" name="escopo">
+        <option value="all">Tudo</option>
+        <option value="produtos">Produtos</option>
+        <option value="movimentacoes">Movimentações</option>
+        <option value="relatorios">Relatórios</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Ação</label>
+      <select class="form-select" name="acao_usuario">
+        <option value="ativar">Ativar</option>
+        <option value="desativar">Desativar</option>
+      </select>
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+      <button class="btn btn-secondary w-100" type="submit">Aplicar</button>
+    </div>
+  </form>
+
+  <!-- Listas de relacionamentos existentes -->
+  <div class="row mt-4">
+    <div class="col-md-6">
+      <h5>Empresas Relacionadas</h5>
+      <div class="table-responsive">
+        <table class="table table-sm table-striped">
+          <thead>
+            <tr>
+              <th>Empresa A</th>
+              <th>Empresa B</th>
+              <th>Status</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in rel_empresas %}
+            <tr>
+              <td>{{ empresa_id_to_nome.get(r.empresa_a_id, r.empresa_a_id) }}</td>
+              <td>{{ empresa_id_to_nome.get(r.empresa_b_id, r.empresa_b_id) }}</td>
+              <td><span class="badge {% if r.ativo %}bg-success{% else %}bg-secondary{% endif %}">{{ 'Ativo' if r.ativo else 'Inativo' }}</span></td>
+              <td>
+                <form method="post" class="d-inline" onsubmit="return confirm('Remover relacionamento de empresas?');">
+                  <input type="hidden" name="delete_rel_empresa_id" value="{{ r.id }}" />
+                  <button class="btn btn-sm btn-outline-danger">Remover</button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="text-center text-muted">Nenhum relacionamento encontrado.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <h5>Usuários Relacionados</h5>
+      <div class="table-responsive">
+        <table class="table table-sm table-striped">
+          <thead>
+            <tr>
+              <th>Usuário 1</th>
+              <th>Usuário 2</th>
+              <th>Escopo</th>
+              <th>Status</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in rel_usuarios %}
+            <tr>
+              <td>{{ usuario_id_to_nome.get(r.usuario_a_id, r.usuario_a_id) }}</td>
+              <td>{{ usuario_id_to_nome.get(r.usuario_b_id, r.usuario_b_id) }}</td>
+              <td>{{ r.escopo }}</td>
+              <td><span class="badge {% if r.ativo %}bg-success{% else %}bg-secondary{% endif %}">{{ 'Ativo' if r.ativo else 'Inativo' }}</span></td>
+              <td>
+                <form method="post" class="d-inline" onsubmit="return confirm('Remover relacionamento de usuários?');">
+                  <input type="hidden" name="delete_rel_usuario_id" value="{{ r.id }}" />
+                  <button class="btn btn-sm btn-outline-danger">Remover</button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="text-center text-muted">Nenhum relacionamento encontrado.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}
 

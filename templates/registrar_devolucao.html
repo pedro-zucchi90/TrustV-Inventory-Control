@@ -14,7 +14,7 @@
                         <div class="mb-3 position-relative">
                             {{ form.movimentacao_id.label(class="form-label fw-bold") }}
                             <div style="position:relative;">
-                                {{ form.movimentacao_id(class="form-select pe-5", id="movimentacaoSelect") }}
+                                {{ form.movimentacao_id(class="form-select pe-5", id="movimentacaoSelect", style="border:1.5px solid {{ '#dc3545' if form.movimentacao_id.errors else '#232936' }};") }}
                                 <i class="bi bi-caret-down-fill" style="position:absolute; right:16px; top:50%; transform:translateY(-50%); pointer-events:none; color:#6c757d; font-size:1.2rem;"></i>
                             </div>
                             <small class="form-text text-muted">Selecione a venda original que está sendo devolvida</small>
@@ -37,7 +37,7 @@
                         
                         <div class="mb-3">
                             {{ form.quantidade_devolvida.label(class="form-label fw-bold") }}
-                            {{ form.quantidade_devolvida(class="form-control", id="quantidadeDevolvida") }}
+                            {{ form.quantidade_devolvida(class="form-control", id="quantidadeDevolvida", style="border:1.5px solid {{ '#dc3545' if form.quantidade_devolvida.errors else '#232936' }};") }}
                             <small class="form-text text-muted">Quantidade que está sendo devolvida</small>
                         </div>
                         
@@ -48,7 +48,7 @@
                         
                         <div class="mb-3">
                             {{ form.motivo_devolucao.label(class="form-label fw-bold") }}
-                            {{ form.motivo_devolucao(class="form-control") }}
+                            {{ form.motivo_devolucao(class="form-control", style="border:1.5px solid {{ '#dc3545' if form.motivo_devolucao.errors else '#232936' }};") }}
                         </div>
                         
                         <div class="d-grid gap-2">

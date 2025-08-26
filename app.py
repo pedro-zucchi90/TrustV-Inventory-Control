@@ -718,28 +718,99 @@ def seed_site_admin():
 @role_required('site_admin')
 def config_compartilhamento():
     if request.method == 'POST':
-        try:
-            empresa_b_id = int(request.form.get('empresa_b_id'))
-        except Exception:
-            flash('Empresa inválida.', 'danger')
+        # Exclusão de relacionamento Empresa↔Empresa
+        if request.form.get('delete_rel_empresa_id'):
+            try:
+                rel_id = int(request.form.get('delete_rel_empresa_id'))
+                rel = db.session.get(CompartilhamentoEmpresa, rel_id)
+                if rel:
+                    db.session.delete(rel)
+                    db.session.commit()
+                    flash('Relacionamento entre empresas removido.', 'success')
+                else:
+                    flash('Relacionamento não encontrado.', 'warning')
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Erro ao remover relacionamento: {e}', 'danger')
             return redirect(url_for('config_compartilhamento'))
-        acao = request.form.get('acao')  # 'ativar' ou 'desativar'
-        base_id = getattr(current_user, 'empresa_id', current_user.id)
-        if empresa_b_id == base_id:
-            flash('Selecione uma empresa diferente da sua.', 'warning')
+
+        # Exclusão de relacionamento Usuário↔Usuário
+        if request.form.get('delete_rel_usuario_id'):
+            try:
+                relu_id = int(request.form.get('delete_rel_usuario_id'))
+                relu = db.session.get(CompartilhamentoUsuario, relu_id)
+                if relu:
+                    db.session.delete(relu)
+                    db.session.commit()
+                    flash('Relacionamento entre usuários removido.', 'success')
+                else:
+                    flash('Relacionamento não encontrado.', 'warning')
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Erro ao remover relacionamento: {e}', 'danger')
             return redirect(url_for('config_compartilhamento'))
-        rel = CompartilhamentoEmpresa.query.filter_by(empresa_a_id=base_id, empresa_b_id=empresa_b_id).first()
-        if not rel:
-            rel = CompartilhamentoEmpresa(empresa_a_id=base_id, empresa_b_id=empresa_b_id, ativo=(acao == 'ativar'))
-            db.session.add(rel)
-        else:
-            rel.ativo = (acao == 'ativar')
-        db.session.commit()
-        flash('Configuração de compartilhamento atualizada.', 'success')
-        return redirect(url_for('config_compartilhamento'))
+
+        # Empresa ↔ Empresa
+        if request.form.get('empresa_b_id'):
+            try:
+                empresa_b_id = int(request.form.get('empresa_b_id'))
+            except Exception:
+                flash('Empresa inválida.', 'danger')
+                return redirect(url_for('config_compartilhamento'))
+            acao = request.form.get('acao')  # 'ativar' ou 'desativar'
+            base_id = getattr(current_user, 'empresa_id', current_user.id)
+            if empresa_b_id == base_id:
+                flash('Selecione uma empresa diferente da sua.', 'warning')
+                return redirect(url_for('config_compartilhamento'))
+            rel = CompartilhamentoEmpresa.query.filter_by(empresa_a_id=base_id, empresa_b_id=empresa_b_id).first()
+            if not rel:
+                rel = CompartilhamentoEmpresa(empresa_a_id=base_id, empresa_b_id=empresa_b_id, ativo=(acao == 'ativar'))
+                db.session.add(rel)
+            else:
+                rel.ativo = (acao == 'ativar')
+            db.session.commit()
+            flash('Compartilhamento entre empresas atualizado.', 'success')
+            return redirect(url_for('config_compartilhamento'))
+        # Usuário ↔ Usuário (escopo)
+        if request.form.get('usuario_a_id') and request.form.get('usuario_b_id'):
+            try:
+                usuario_a_id = int(request.form.get('usuario_a_id'))
+                usuario_b_id = int(request.form.get('usuario_b_id'))
+            except Exception:
+                flash('Usuário inválido.', 'danger')
+                return redirect(url_for('config_compartilhamento'))
+            if usuario_a_id == usuario_b_id:
+                flash('Selecione usuários diferentes.', 'warning')
+                return redirect(url_for('config_compartilhamento'))
+            acao = request.form.get('acao_usuario')  # 'ativar' ou 'desativar'
+            escopo = request.form.get('escopo') or 'all'
+            relu = CompartilhamentoUsuario.query.filter_by(usuario_a_id=usuario_a_id, usuario_b_id=usuario_b_id).first()
+            if not relu:
+                relu = CompartilhamentoUsuario(usuario_a_id=usuario_a_id, usuario_b_id=usuario_b_id, escopo=escopo, ativo=(acao == 'ativar'))
+                db.session.add(relu)
+            else:
+                relu.ativo = (acao == 'ativar')
+                relu.escopo = escopo
+            db.session.commit()
+            flash('Compartilhamento entre usuários atualizado.', 'success')
+            return redirect(url_for('config_compartilhamento'))
     empresas = Empresa.query.all()
+    usuarios = Usuario.query.all()
+    rel_empresas = CompartilhamentoEmpresa.query.all()
+    rel_usuarios = CompartilhamentoUsuario.query.all()
     base_id = getattr(current_user, 'empresa_id', current_user.id)
-    return render_template('config_compartilhamento.html', empresas=empresas, base_id=base_id)
+    empresa_id_to_nome = {e.id: e.nome for e in empresas}
+    usuario_id_to_nome = {u.id: u.nome for u in usuarios}
+    return render_template(
+        'config_compartilhamento.html',
+        empresas=empresas,
+        usuarios=usuarios,
+        rel_empresas=rel_empresas,
+        rel_usuarios=rel_usuarios,
+        empresa_id_to_nome=empresa_id_to_nome,
+        usuario_id_to_nome=usuario_id_to_nome,
+        base_id=base_id
+    )
 
 @app.context_processor
 def inject_alertas_fiscais():
@@ -964,7 +1035,7 @@ def inventario():
 
 @app.route('/previsao_demanda')
 @login_required
-@role_required('administrador', 'vendedor')
+@role_required('administrador')
 def previsao_demanda():
     return render_template('previsao_demanda.html')
 

@@ -694,6 +694,11 @@ input:required:valid, select:required:valid, textarea:required:valid {
   box-sizing: border-box !important;
   overflow: hidden !important;
   white-space: nowrap !important;
+  background: #ffffff !important;
+  color: #1e88e5 !important;
+  border: 2px solid #1e88e5 !important;
+  outline: 2px solid #1e88e5 !important;
+  outline-offset: 2px !important;
 }
 
 .btn-acao.w-100, .btn-acao.btn, .btn-acao.btn-outline-primary, .btn-acao.btn-funcionalidade {
