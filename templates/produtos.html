@@ -21,7 +21,6 @@
         <table class="table table-bordered table-striped">
             <thead class="table-light">
                 <tr>
-                    <th>ID</th>
                     <th>Nome</th>
                     <th>Descrição</th>
                     <th>Preço de Compra</th>
@@ -33,7 +32,6 @@
             <tbody>
                 {% for p in produtos %}
                 <tr>
-                    <td>{{ p.id }}</td>
                     <td>{{ p.nome }}</td>
                     <td>{{ p.descricao }}</td>
                     <td>R$ {{ p.preco_compra|float|round(2)|replace('.', ',') }}</td>

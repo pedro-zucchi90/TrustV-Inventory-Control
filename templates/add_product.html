@@ -6,23 +6,23 @@
         {{ form.hidden_tag() }}
         <div class="mb-3">
             {{ form.nome.label(class="form-label") }}
-            {{ form.nome(class="form-control") }}
+            {{ form.nome(class="form-control", style="border:1.5px solid {{ '#dc3545' if form.nome.errors else '#232936' }};") }}
         </div>
         <div class="mb-3">
             {{ form.descricao.label(class="form-label") }}
-            {{ form.descricao(class="form-control") }}
+            {{ form.descricao(class="form-control", style="border:1.5px solid {{ '#dc3545' if form.descricao.errors else '#232936' }};") }}
         </div>
         <div class="mb-3">
             {{ form.preco_compra.label(class="form-label") }}
-            {{ form.preco_compra(class="form-control") }}
+            {{ form.preco_compra(class="form-control", style="border:1.5px solid {{ '#dc3545' if form.preco_compra.errors else '#232936' }};") }}
         </div>
         <div class="mb-3">
             {{ form.preco_venda.label(class="form-label") }}
-            {{ form.preco_venda(class="form-control") }}
+            {{ form.preco_venda(class="form-control", style="border:1.5px solid {{ '#dc3545' if form.preco_venda.errors else '#232936' }};") }}
         </div>
         <div class="mb-3">
             {{ form.quantidade_estoque.label(class="form-label") }}
-            {{ form.quantidade_estoque(class="form-control") }}
+            {{ form.quantidade_estoque(class="form-control", style="border:1.5px solid {{ '#dc3545' if form.quantidade_estoque.errors else '#232936' }};") }}
         </div>
         <div class="mb-3">
             {{ form.submit(class="btn btn-success w-100") }}

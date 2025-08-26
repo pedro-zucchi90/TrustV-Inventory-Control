@@ -6,11 +6,13 @@
         {{ form.hidden_tag() }}
         <div class="mb-3">
             {{ form.email.label(class="form-label", style="color:#fff;") }}
-            {{ form.email(class="form-control", style="background:#181c24; color:#fff; border:1.5px solid #232936; border-radius:8px;") }}
+            {{ form.email(class="form-control", style="background:#181c24; color:#fff; border:1.5px solid {{ '#dc3545' if form.email.errors else '#232936' }}; border-radius:8px;") }}
+            {% for error in form.email.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
         </div>
         <div class="mb-3">
             {{ form.senha.label(class="form-label", style="color:#fff;") }}
-            {{ form.senha(class="form-control", style="background:#181c24; color:#fff; border:1.5px solid #232936; border-radius:8px;") }}
+            {{ form.senha(class="form-control", style="background:#181c24; color:#fff; border:1.5px solid {{ '#dc3545' if form.senha.errors else '#232936' }}; border-radius:8px;") }}
+            {% for error in form.senha.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
         </div>
         <div class="mb-3">
             {{ form.submit(class="btn btn-primary w-100", style="background:#2563eb; border:none; color:#fff; font-weight:600; border-radius:8px;") }}

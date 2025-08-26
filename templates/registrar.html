@@ -6,19 +6,19 @@
         <input type="hidden" name="csrf_token" value="{{ form.csrf_token._value() }}">
         <div class="mb-3">
             {{ form.empresa.label(class="form-label", style="color:#fff;") }}
-            {{ form.empresa(class="form-control", style="background:#181c24; color:#fff; border:1.5px solid #232936; border-radius:8px;") }}
+            {{ form.empresa(class="form-control", style="background:#181c24; color:#fff; border:1.5px solid {{ '#dc3545' if form.empresa.errors else '#232936' }}; border-radius:8px;") }}
             {% for error in form.empresa.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
         </div>
         <div class="mb-3">
             {{ form.role.label(class="form-label", style="color:#fff;") }}
-            {{ form.role(class="form-select", style="background:#181c24; color:#fff; border:1.5px solid #232936; border-radius:8px;") }}
+            {{ form.role(class="form-control", style="background:#181c24; color:#fff; border:1.5px solid {{ '#dc3545' if form.role.errors else '#232936' }}; border-radius:8px;") }}
             {% for error in form.role.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
         </div>
         {% for field in form if field.type != 'CSRFToken' and field.type != 'SubmitField' %}
         {% if field.name not in ['empresa', 'role'] %}
         <div class="mb-3">
             {{ field.label(class="form-label", style="color:#fff;") }}
-            {{ field(class="form-control", style="background:#181c24; color:#fff; border:1.5px solid #232936; border-radius:8px;") }}
+            {{ field(class="form-control", style="background:#181c24; color:#fff; border:1.5px solid {{ '#dc3545' if field.errors else '#232936' }}; border-radius:8px;") }}
             {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
         </div>
         {% endif %}

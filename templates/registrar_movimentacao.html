@@ -23,30 +23,30 @@
         {{ form.hidden_tag() }}
         <div class="mb-3">
             {{ form.produto_id.label(class="form-label") }}
-            {{ form.produto_id(class="form-select") }}
+            {{ form.produto_id(class="form-select", style="border:1.5px solid {{ '#dc3545' if form.produto_id.errors else '#232936' }};") }}
         </div>
         <div class="mb-3">
             {{ form.tipo.label(class="form-label") }}
-            {{ form.tipo(class="form-select", id="tipoSelect") }}
+            {{ form.tipo(class="form-select", id="tipoSelect", style="border:1.5px solid {{ '#dc3545' if form.tipo.errors else '#232936' }};") }}
         </div>
         <div class="mb-3">
             <label class="form-label d-flex align-items-center justify-content-between">
                 <span>{{ form.quantidade.label.text }}</span>
                 <small id="chipEstoque" class="badge bg-secondary" style="font-weight:600;">Estoque disponível: -</small>
             </label>
-            {{ form.quantidade(class="form-control", placeholder="Ex.: 5", min="0", step="1") }}
+            {{ form.quantidade(class="form-control", placeholder="Ex.: 5", min="0", step="1", style="border:1.5px solid {{ '#dc3545' if form.quantidade.errors else '#232936' }};") }}
         </div>
         <div class="mb-3" id="campo-compra" style="display: none;">
             {{ form.valor_unitario.label(class="form-label", title="Valor de compra") }}
-            {{ form.valor_unitario(class="form-control", placeholder="Ex.: 12,50") }}
+            {{ form.valor_unitario(class="form-control", placeholder="Ex.: 12,50", style="border:1.5px solid {{ '#dc3545' if form.valor_unitario.errors else '#232936' }};") }}
         </div>
         <div class="mb-3" id="campo-venda" style="display: none;">
             {{ form.valor_venda.label(class="form-label", title="Valor de venda") }}
-            {{ form.valor_venda(class="form-control", placeholder="Ex.: 19,90") }}
+            {{ form.valor_venda(class="form-control", placeholder="Ex.: 19,90", style="border:1.5px solid {{ '#dc3545' if form.valor_venda and form.valor_venda.errors else '#232936' }};") }}
         </div>
         <div class="mb-3" id="campo-desconto" style="display: none;">
             {{ form.percentual_desconto.label(class="form-label", title="Percentual de desconto") }}
-            {{ form.percentual_desconto(class="form-control", placeholder="0.00") }}
+            {{ form.percentual_desconto(class="form-control", placeholder="0.00", style="border:1.5px solid {{ '#dc3545' if form.percentual_desconto and form.percentual_desconto.errors else '#232936' }};") }}
             <small class="form-text text-muted">Digite o percentual de desconto (ex: 5.00 para 5%)</small>
         </div>
         <div class="mb-3">

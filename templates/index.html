@@ -21,9 +21,11 @@
 <div class="grafico-box">
     <div class="grafico-header">
         <span class="fw-bold">Evolução da Margem de Lucro (Últimos 6 meses)</span>
+        {% if current_user.role in ['administrador','contador'] %}
         <div>
             <a href="{{ url_for('relatorio_fiscal') }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-download"></i> Exportar Relatório</a>
         </div>
+        {% endif %}
     </div>
     <canvas id="grafico-lucro" height="80"></canvas>
 </div>
@@ -167,28 +169,68 @@
     <div class="col-md-6">
         <div class="table-box">
             <div class="fw-bold mb-2">Ações Rápidas</div>
-            <div class="acoes-rapidas d-flex flex-wrap gap-2">
-                <a href="{{ url_for('adicionar_produto') }}" class="btn-acao btn btn-outline-primary flex-grow-1 flex-shrink-0" style="min-width: 180px;">
-                    <i class="bi bi-plus-circle"></i> <span class="text">Cadastrar Produto</span>
-                </a>
-                <a href="{{ url_for('registrar_movimentacao', tipo='compra') }}" class="btn-acao btn btn-outline-primary flex-grow-1 flex-shrink-0" style="min-width: 180px;">
-                    <i class="bi bi-cart-plus"></i> <span class="text">Registrar Compra</span>
-                </a>
-                <a href="{{ url_for('registrar_movimentacao', tipo='venda') }}" class="btn-acao btn btn-outline-primary flex-grow-1 flex-shrink-0" style="min-width: 180px;">
-                    <i class="bi bi-cart-check"></i> <span class="text">Registrar Venda</span>
-                </a>
-                <a href="{{ url_for('relatorio_fiscal') }}" class="btn-acao btn btn-outline-primary flex-grow-1 flex-shrink-0" style="min-width: 180px;">
-                    <i class="bi bi-file-earmark-bar-graph"></i> <span class="text">Relatório Fiscal</span>
-                </a>
-                <a href="{{ url_for('inventario') }}" class="btn-acao btn btn-funcionalidade flex-grow-1 flex-shrink-0" style="min-width: 180px;">
-                    <i class="bi bi-box-seam"></i> <span class="text">Inventário</span>
-                </a>
-                <a href="{{ url_for('previsao_demanda') }}" class="btn-acao btn btn-funcionalidade flex-grow-1 flex-shrink-0" style="min-width: 180px;">
-                    <i class="bi bi-graph-up"></i> <span class="text">Previsão de Demanda</span>
-                </a>
-                <a href="{{ url_for('relatorio_geral_completo') }}" class="btn-acao btn btn-funcionalidade flex-grow-1 flex-shrink-0" style="min-width: 180px;">
-                    <i class="bi bi-file-earmark-text"></i> <span class="text">Relatório Completo</span>
-                </a>
+            <div class="row g-3">
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <a href="{{ url_for('registrar_movimentacao', tipo='venda') }}" class="btn-acao btn btn-white w-100 d-flex align-items-center justify-content-center gap-2" style="background:#ffffff; border:1.5px solid #1e88e5; color:#1e88e5; outline:2px solid #1e88e5; outline-offset:2px; border-radius:8px;" title="Lançar uma venda" data-bs-toggle="tooltip">
+                        <i class="bi bi-cart-check"></i>
+                        <span class="text">Registrar Venda</span>
+                    </a>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <a href="{{ url_for('registrar_movimentacao', tipo='compra') }}" class="btn-acao btn btn-white w-100 d-flex align-items-center justify-content-center gap-2" style="background:#ffffff; border:1.5px solid #1e88e5; color:#1e88e5; outline:2px solid #1e88e5; outline-offset:2px; border-radius:8px;" title="Lançar uma compra" data-bs-toggle="tooltip">
+                        <i class="bi bi-cart-plus"></i>
+                        <span class="text">Registrar Compra</span>
+                    </a>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <a href="{{ url_for('adicionar_produto') }}" class="btn-acao btn btn-white w-100 d-flex align-items-center justify-content-center gap-2" style="background:#ffffff; border:1.5px solid #1e88e5; color:#1e88e5; outline:2px solid #1e88e5; outline-offset:2px; border-radius:8px;" title="Cadastrar um novo produto" data-bs-toggle="tooltip">
+                        <i class="bi bi-plus-circle"></i>
+                        <span class="text">Cadastrar Produto</span>
+                    </a>
+                </div>
+
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <a href="{{ url_for('listar_movimentacoes') }}" class="btn-acao btn btn-white w-100 d-flex align-items-center justify-content-center gap-2" style="background:#ffffff; border:1.5px solid #1e88e5; color:#1e88e5; outline:2px solid #1e88e5; outline-offset:2px; border-radius:8px;" title="Ver histórico de movimentações" data-bs-toggle="tooltip">
+                        <i class="bi bi-clock-history"></i>
+                        <span class="text">Histórico de Movimentações</span>
+                    </a>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <a href="{{ url_for('listar_devolucoes') }}" class="btn-acao btn btn-white w-100 d-flex align-items-center justify-content-center gap-2" style="background:#ffffff; border:1.5px solid #1e88e5; color:#1e88e5; outline:2px solid #1e88e5; outline-offset:2px; border-radius:8px;" title="Ver devoluções" data-bs-toggle="tooltip">
+                        <i class="bi bi-arrow-return-left"></i>
+                        <span class="text">Devoluções</span>
+                    </a>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <a href="{{ url_for('inventario') }}" class="btn-acao btn btn-white w-100 d-flex align-items-center justify-content-center gap-2" style="background:#ffffff; border:1.5px solid #1e88e5; color:#1e88e5; outline:2px solid #1e88e5; outline-offset:2px; border-radius:8px;" title="Analisar inventário" data-bs-toggle="tooltip">
+                        <i class="bi bi-box-seam"></i>
+                        <span class="text">Inventário</span>
+                    </a>
+                </div>
+
+                {% if current_user.role == 'administrador' %}
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <a href="{{ url_for('previsao_demanda') }}" class="btn-acao btn btn-white w-100 d-flex align-items-center justify-content-center gap-2" style="background:#ffffff; border:1.5px solid #1e88e5; color:#1e88e5; outline:2px solid #1e88e5; outline-offset:2px; border-radius:8px;" title="Previsão de demanda" data-bs-toggle="tooltip">
+                        <i class="bi bi-graph-up"></i>
+                        <span class="text">Previsão de Demanda</span>
+                    </a>
+                </div>
+                {% endif %}
+
+                {% if current_user.role in ['administrador','contador'] %}
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <a href="{{ url_for('relatorio_fiscal') }}" class="btn-acao btn btn-white w-100 d-flex align-items-center justify-content-center gap-2" style="background:#ffffff; border:1.5px solid #1e88e5; color:#1e88e5; outline:2px solid #1e88e5; outline-offset:2px; border-radius:8px;" title="Relatório fiscal do mês" data-bs-toggle="tooltip">
+                        <i class="bi bi-file-earmark-bar-graph"></i>
+                        <span class="text">Relatório Fiscal</span>
+                    </a>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <a href="{{ url_for('relatorio_geral_completo') }}" class="btn-acao btn btn-white w-100 d-flex align-items-center justify-content-center gap-2" style="background:#ffffff; border:1.5px solid #1e88e5; color:#1e88e5; outline:2px solid #1e88e5; outline-offset:2px; border-radius:8px;" title="Relatório geral completo" data-bs-toggle="tooltip">
+                        <i class="bi bi-file-earmark-text"></i>
+                        <span class="text">Relatório Completo</span>
+                    </a>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
