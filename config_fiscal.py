@@ -4,6 +4,7 @@ TAXA_DESPESAS_COMERCIAIS = 0.03  # 3%
 
 def calcular_impostos_vendas(valor_unitario, quantidade):
     return valor_unitario * quantidade * TAXA_IMPOSTOS_VENDAS
+# ... outras funções de cálculo ...
 
 # Função para calcular o desconto aplicado em uma venda
 # Parâmetros:

@@ -1,4 +1,8 @@
-# Modelo Movimentacao: representa uma movimentação de estoque (compra, venda ou devolução)
+"""Modelo Movimentacao: movimentações de estoque (compra, venda, devolução).
+
+Inclui campos auxiliares para cálculo fiscal (impostos, CMV, despesas) e
+relacionamentos com produto/usuário/empresa para escopo multi-tenant.
+"""
 from . import db
 from datetime import datetime
 

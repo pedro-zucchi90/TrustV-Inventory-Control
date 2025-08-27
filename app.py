@@ -14,7 +14,7 @@ from werkzeug.utils import secure_filename
 from models import Movimentacao
 from datetime import datetime
 from sqlalchemy import extract, inspect, text
-from forms import CadastroUsuarioForm, EditarUsuarioForm
+from forms import CadastroUsuarioForm, EditarUsuarioForm, EmpresaForm  # Formulário de Empresa para CRUD do site_admin
 from functools import wraps
 # Removido WeasyPrint
 import pdfkit
@@ -26,7 +26,7 @@ from config_fiscal import (
     calcular_cmv
 )
 from sqlalchemy.orm import scoped_session
-from models import Empresa, CompartilhamentoEmpresa, CompartilhamentoUsuario
+from models import Empresa, CompartilhamentoEmpresa, CompartilhamentoUsuario  # Modelos de domínio para empresas e compartilhamento
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -41,7 +41,9 @@ login_manager.login_view = 'login'
 def load_user(user_id):
     return db.session.get(Usuario, int(user_id))
 
+
 def role_required(*roles):
+    """Restringe acesso por papel (role). 'site_admin' tem acesso total."""
     def decorator(view_func):
         @wraps(view_func)
         def wrapper(*args, **kwargs):
@@ -69,7 +71,7 @@ def login():
             login_user(usuario)
             flash('Login realizado com sucesso!', 'success')
             if usuario.role == 'site_admin':
-                return redirect(url_for('index'))
+                return redirect(url_for('config_compartilhamento'))
             if usuario.role == 'contador':
                 return redirect(url_for('relatorio_fiscal'))
             return redirect(url_for('index'))
@@ -713,104 +715,54 @@ def seed_site_admin():
         db.session.add(admin)
         db.session.commit()
 
+
+def safe_add_column_ativo_empresa():
+    """Migração leve: garante a coluna 'ativo' na tabela empresa.
+
+    Executa ALTER TABLE idempotente no startup para ambientes sem Alembic.
+    """
+    try:
+        insp = inspect(db.engine)
+        cols = [c['name'] for c in insp.get_columns('empresa')]
+        if 'ativo' not in cols:
+            with db.engine.begin() as conn:
+                conn.execute(text('ALTER TABLE empresa ADD COLUMN ativo BOOLEAN NOT NULL DEFAULT 1'))
+    except Exception as e:
+        # Evita quebrar startup se já existir/erro de permissão; log simples
+        print('Aviso: não foi possível garantir coluna ativo em empresa:', e)
+
 @app.route('/config/compartilhamento', methods=['GET', 'POST'])
 @login_required
 @role_required('site_admin')
 def config_compartilhamento():
+    """Tela de configuração de compartilhamento de dados entre empresas.
+
+    - POST: cria/atualiza vínculo de compartilhamento (ativar/desativar)
+    - GET: exibe lista de empresas e estado do compartilhamento
+    """
     if request.method == 'POST':
-        # Exclusão de relacionamento Empresa↔Empresa
-        if request.form.get('delete_rel_empresa_id'):
-            try:
-                rel_id = int(request.form.get('delete_rel_empresa_id'))
-                rel = db.session.get(CompartilhamentoEmpresa, rel_id)
-                if rel:
-                    db.session.delete(rel)
-                    db.session.commit()
-                    flash('Relacionamento entre empresas removido.', 'success')
-                else:
-                    flash('Relacionamento não encontrado.', 'warning')
-            except Exception as e:
-                db.session.rollback()
-                flash(f'Erro ao remover relacionamento: {e}', 'danger')
+        try:
+            empresa_b_id = int(request.form.get('empresa_b_id'))
+        except Exception:
+            flash('Empresa inválida.', 'danger')
             return redirect(url_for('config_compartilhamento'))
-
-        # Exclusão de relacionamento Usuário↔Usuário
-        if request.form.get('delete_rel_usuario_id'):
-            try:
-                relu_id = int(request.form.get('delete_rel_usuario_id'))
-                relu = db.session.get(CompartilhamentoUsuario, relu_id)
-                if relu:
-                    db.session.delete(relu)
-                    db.session.commit()
-                    flash('Relacionamento entre usuários removido.', 'success')
-                else:
-                    flash('Relacionamento não encontrado.', 'warning')
-            except Exception as e:
-                db.session.rollback()
-                flash(f'Erro ao remover relacionamento: {e}', 'danger')
+        acao = request.form.get('acao')  # 'ativar' ou 'desativar'
+        base_id = getattr(current_user, 'empresa_id', current_user.id)
+        if empresa_b_id == base_id:
+            flash('Selecione uma empresa diferente da sua.', 'warning')
             return redirect(url_for('config_compartilhamento'))
-
-        # Empresa ↔ Empresa
-        if request.form.get('empresa_b_id'):
-            try:
-                empresa_b_id = int(request.form.get('empresa_b_id'))
-            except Exception:
-                flash('Empresa inválida.', 'danger')
-                return redirect(url_for('config_compartilhamento'))
-            acao = request.form.get('acao')  # 'ativar' ou 'desativar'
-            base_id = getattr(current_user, 'empresa_id', current_user.id)
-            if empresa_b_id == base_id:
-                flash('Selecione uma empresa diferente da sua.', 'warning')
-                return redirect(url_for('config_compartilhamento'))
-            rel = CompartilhamentoEmpresa.query.filter_by(empresa_a_id=base_id, empresa_b_id=empresa_b_id).first()
-            if not rel:
-                rel = CompartilhamentoEmpresa(empresa_a_id=base_id, empresa_b_id=empresa_b_id, ativo=(acao == 'ativar'))
-                db.session.add(rel)
-            else:
-                rel.ativo = (acao == 'ativar')
-            db.session.commit()
-            flash('Compartilhamento entre empresas atualizado.', 'success')
-            return redirect(url_for('config_compartilhamento'))
-        # Usuário ↔ Usuário (escopo)
-        if request.form.get('usuario_a_id') and request.form.get('usuario_b_id'):
-            try:
-                usuario_a_id = int(request.form.get('usuario_a_id'))
-                usuario_b_id = int(request.form.get('usuario_b_id'))
-            except Exception:
-                flash('Usuário inválido.', 'danger')
-                return redirect(url_for('config_compartilhamento'))
-            if usuario_a_id == usuario_b_id:
-                flash('Selecione usuários diferentes.', 'warning')
-                return redirect(url_for('config_compartilhamento'))
-            acao = request.form.get('acao_usuario')  # 'ativar' ou 'desativar'
-            escopo = request.form.get('escopo') or 'all'
-            relu = CompartilhamentoUsuario.query.filter_by(usuario_a_id=usuario_a_id, usuario_b_id=usuario_b_id).first()
-            if not relu:
-                relu = CompartilhamentoUsuario(usuario_a_id=usuario_a_id, usuario_b_id=usuario_b_id, escopo=escopo, ativo=(acao == 'ativar'))
-                db.session.add(relu)
-            else:
-                relu.ativo = (acao == 'ativar')
-                relu.escopo = escopo
-            db.session.commit()
-            flash('Compartilhamento entre usuários atualizado.', 'success')
-            return redirect(url_for('config_compartilhamento'))
+        rel = CompartilhamentoEmpresa.query.filter_by(empresa_a_id=base_id, empresa_b_id=empresa_b_id).first()
+        if not rel:
+            rel = CompartilhamentoEmpresa(empresa_a_id=base_id, empresa_b_id=empresa_b_id, ativo=(acao == 'ativar'))
+            db.session.add(rel)
+        else:
+            rel.ativo = (acao == 'ativar')
+        db.session.commit()
+        flash('Configuração de compartilhamento atualizada.', 'success')
+        return redirect(url_for('config_compartilhamento'))
     empresas = Empresa.query.all()
-    usuarios = Usuario.query.all()
-    rel_empresas = CompartilhamentoEmpresa.query.all()
-    rel_usuarios = CompartilhamentoUsuario.query.all()
     base_id = getattr(current_user, 'empresa_id', current_user.id)
-    empresa_id_to_nome = {e.id: e.nome for e in empresas}
-    usuario_id_to_nome = {u.id: u.nome for u in usuarios}
-    return render_template(
-        'config_compartilhamento.html',
-        empresas=empresas,
-        usuarios=usuarios,
-        rel_empresas=rel_empresas,
-        rel_usuarios=rel_usuarios,
-        empresa_id_to_nome=empresa_id_to_nome,
-        usuario_id_to_nome=usuario_id_to_nome,
-        base_id=base_id
-    )
+    return render_template('config_compartilhamento.html', empresas=empresas, base_id=base_id)
 
 @app.context_processor
 def inject_alertas_fiscais():
@@ -908,6 +860,97 @@ def registrar():
     else:
         print('Formulário NÃO validado:', form.errors)
     return render_template('registrar.html', form=form)
+
+# ---------------------- Administração de Empresas (site_admin) ----------------------
+@app.route('/empresas', methods=['GET', 'POST'])
+@login_required
+@role_required('site_admin')
+def empresas():
+    """Listagem e criação de empresas (somente para site_admin).
+
+    - GET: lista empresas (ativas e inativas)
+    - POST: cria nova empresa se nome ainda não existir
+    """
+    form = EmpresaForm()
+    if form.validate_on_submit():
+        existente = Empresa.query.filter_by(nome=form.nome.data).first()
+        if existente:
+            flash('Já existe uma empresa com este nome.', 'warning')
+        else:
+            nova = Empresa(nome=form.nome.data, cnpj=form.cnpj.data or None)
+            db.session.add(nova)
+            db.session.commit()
+            flash('Empresa criada com sucesso.', 'success')
+            return redirect(url_for('empresas'))
+    empresas = Empresa.query.order_by(Empresa.nome.asc()).all()
+    return render_template('empresas.html', form=form, empresas=empresas)
+
+
+@app.route('/empresas/<int:empresa_id>/editar', methods=['GET', 'POST'])
+@login_required
+@role_required('site_admin')
+def editar_empresa(empresa_id):
+    """Edição de dados da empresa (somente para site_admin)."""
+    empresa = db.session.get(Empresa, empresa_id)
+    if not empresa:
+        flash('Empresa não encontrada.', 'danger')
+        return redirect(url_for('empresas'))
+    form = EmpresaForm(obj=empresa)
+    if form.validate_on_submit():
+        # Verifica duplicidade de nome ao editar
+        duplicada = Empresa.query.filter(Empresa.nome == form.nome.data, Empresa.id != empresa.id).first()
+        if duplicada:
+            flash('Já existe outra empresa com este nome.', 'warning')
+        else:
+            empresa.nome = form.nome.data
+            empresa.cnpj = form.cnpj.data or None
+            db.session.commit()
+            flash('Empresa atualizada com sucesso.', 'success')
+            return redirect(url_for('empresas'))
+    return render_template('empresas.html', form=form, empresas=Empresa.query.order_by(Empresa.nome.asc()).all(), editar_id=empresa.id)
+
+
+@app.route('/empresas/<int:empresa_id>/deletar', methods=['POST'])
+@login_required
+@role_required('site_admin')
+def deletar_empresa(empresa_id):
+    """Desativa (soft delete) uma empresa após verificar vínculos básicos."""
+    empresa = db.session.get(Empresa, empresa_id)
+    if not empresa:
+        flash('Empresa não encontrada.', 'danger')
+        return redirect(url_for('empresas'))
+
+    # Verificações de vínculo: usuários, produtos, movimentações, devoluções, compartilhamentos
+    tem_usuario = db.session.execute(text('SELECT 1 FROM usuario WHERE empresa_id = :id LIMIT 1'), {'id': empresa.id}).first() is not None
+    tem_produto = db.session.execute(text('SELECT 1 FROM produto WHERE empresa_id = :id LIMIT 1'), {'id': empresa.id}).first() is not None
+    tem_mov = db.session.execute(text('SELECT 1 FROM movimentacao WHERE empresa_id = :id LIMIT 1'), {'id': empresa.id}).first() is not None
+    tem_dev = db.session.execute(text('SELECT 1 FROM devolucao WHERE empresa_id = :id LIMIT 1'), {'id': empresa.id}).first() is not None
+    tem_comp = db.session.execute(text('SELECT 1 FROM compartilhamento_empresa WHERE empresa_a_id = :id OR empresa_b_id = :id LIMIT 1'), {'id': empresa.id}).first() is not None
+
+    if any([tem_usuario, tem_produto, tem_mov, tem_dev, tem_comp]):
+        flash('Não é possível excluir: a empresa possui vínculos com dados.', 'warning')
+        return redirect(url_for('editar_empresa', empresa_id=empresa.id))
+
+    # Soft delete (desativação)
+    empresa.ativo = False
+    db.session.commit()
+    flash('Empresa desativada com sucesso.', 'success')
+    return redirect(url_for('empresas'))
+
+
+@app.route('/empresas/<int:empresa_id>/reativar', methods=['POST'])
+@login_required
+@role_required('site_admin')
+def reativar_empresa(empresa_id):
+    """Reativa uma empresa desativada (soft delete)."""
+    empresa = db.session.get(Empresa, empresa_id)
+    if not empresa:
+        flash('Empresa não encontrada.', 'danger')
+        return redirect(url_for('empresas'))
+    empresa.ativo = True
+    db.session.commit()
+    flash('Empresa reativada com sucesso.', 'success')
+    return redirect(url_for('empresas'))
 
 @app.route('/editar_conta', methods=['GET', 'POST'])
 @login_required
@@ -1035,7 +1078,7 @@ def inventario():
 
 @app.route('/previsao_demanda')
 @login_required
-@role_required('administrador')
+@role_required('administrador', 'vendedor')
 def previsao_demanda():
     return render_template('previsao_demanda.html')
 
@@ -1572,9 +1615,8 @@ def api_movimentacao_detalhes(movimentacao_id):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-        # Realizar migração leve para colunas adicionadas após a criação inicial do DB
+        safe_add_column_ativo_empresa()
         ensure_schema_columns()
-        # Seed do administrador do site (não registrável)
         seed_site_admin()
         try:
             calcular_campos_fiscais_automaticamente()
