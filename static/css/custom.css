@@ -218,7 +218,7 @@ body {
     border-radius: 16px;
     box-shadow: 0 4px 16px rgba(0,0,0,0.1);
     padding: 24px 32px;
-    margin-bottom: 24px;
+    margin-bottom: 32px; /* Aumentado de 24px para 32px */
     border: 1px solid #e9ecef;
 }
 .table-box table {
@@ -904,20 +904,23 @@ input:required:valid, select:required:valid, textarea:required:valid {
 
 /* Ajuste específico para as boxes de dados fiscais e despesas */
 .row .col-md-6 .card .card-body {
-    min-height: 160px;
+    min-height: 120px; /* Reduzido de 160px para 120px */
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
+    padding: 12px 16px !important; /* Reduzido padding */
 }
 
 .row .col-md-6 .card .card-body p {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.25rem; /* Reduzido de 0.75rem para 0.25rem */
     flex: 1;
     display: flex;
     align-items: flex-start;
     justify-content: flex-start;
-    min-height: 1.5rem;
+    min-height: 1.2rem; /* Reduzido de 1.5rem para 1.2rem */
     text-align: left;
+    font-size: 0.9rem; /* Reduzido tamanho da fonte */
+    line-height: 1.2; /* Reduzido espaçamento entre linhas */
 }
 
 .row .col-md-6 .card .card-body p:last-child {
@@ -929,6 +932,7 @@ input:required:valid, select:required:valid, textarea:required:valid {
     height: 100%;
     display: flex;
     flex-direction: column;
+    margin-bottom: 40px !important; /* Espaçamento consistente entre boxes */
 }
 
 .row .col-md-6 .grafico-box .grafico-header {
@@ -945,28 +949,38 @@ input:required:valid, select:required:valid, textarea:required:valid {
     flex-shrink: 0;
 }
 
+/* Espaçamento adicional para separar melhor as seções */
+.grafico-box + .table-box {
+    margin-top: 24px; /* Espaçamento adicional após boxes de gráfico */
+}
+
+/* Ajuste para a tabela de divergências fiscais */
+.table-box:has(.fw-bold:contains("Produtos com Divergência Fiscal")) {
+    margin-top: 32px; /* Espaçamento extra para esta tabela específica */
+}
+
 /* Ajuste para as boxes de vendas e monitoramento ficarem menores */
 .row .col-md-6 .card {
-    min-height: 320px !important;
-    max-height: 360px !important;
+    min-height: 280px !important; /* Reduzido de 320px para 280px */
+    max-height: 320px !important; /* Reduzido de 360px para 320px */
 }
 
 .row .col-md-6 .d-flex.flex-column .card {
-    min-height: 90px !important;
-    max-height: 110px !important;
+    min-height: 80px !important; /* Reduzido de 90px para 80px */
+    max-height: 100px !important; /* Reduzido de 110px para 100px */
 }
 
 .row .col-md-6 .d-flex.flex-column .card .card-body {
-    padding: 12px 16px !important;
+    padding: 8px 12px !important; /* Reduzido padding */
 }
 
 .row .col-md-6 .card .card-body {
-    padding: 16px 20px !important;
+    padding: 12px 16px !important; /* Reduzido padding */
 }
 
 /* Diminuir espaçamento entre textos nas boxes */
 .row .col-md-6 .card .card-body .text-center {
-    margin-bottom: 0.25rem !important;
+    margin-bottom: 0.125rem !important; /* Reduzido de 0.25rem para 0.125rem */
 }
 
 .row .col-md-6 .card .card-body .text-center:last-child {
@@ -974,13 +988,13 @@ input:required:valid, select:required:valid, textarea:required:valid {
 }
 
 .row .col-md-6 .card .card-body h3 {
-    margin-bottom: 2px !important;
+    margin-bottom: 1px !important; /* Reduzido de 2px para 1px */
 }
 
 .row .col-md-6 .card .card-body p {
-    margin-bottom: 0.125rem !important;
+    margin-bottom: 0.125rem !important; /* Reduzido de 0.125rem para 0.125rem (já estava correto) */
 }
 
 .row .col-md-6 .d-flex.flex-column .card .card-body p {
-    margin-bottom: 0.25rem !important;
+    margin-bottom: 0.125rem !important; /* Reduzido de 0.25rem para 0.125rem */
 }
