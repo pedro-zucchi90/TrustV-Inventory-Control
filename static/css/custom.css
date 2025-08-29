@@ -688,18 +688,18 @@ input:required:valid, select:required:valid, textarea:required:valid {
 } 
 
 .btn-acao {
-  min-width: 160px !important;
-  max-width: 220px !important;
+  min-width: 120px !important;
+  max-width: 140px !important;
   width: 100% !important;
-  min-height: 56px !important;
-  height: 56px !important;
-  padding: 0.5rem 1rem !important;
+  min-height: 48px !important;
+  height: 48px !important;
+  padding: 0.4rem 0.8rem !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 0.4rem !important;
+  gap: 0.3rem !important;
   font-weight: 600 !important;
-  font-size: 1rem !important;
+  font-size: 0.9rem !important;
   border-radius: 0.5rem !important;
   transition: background 0.2s, color 0.2s !important;
   text-align: center !important;
@@ -709,22 +709,22 @@ input:required:valid, select:required:valid, textarea:required:valid {
   background: #ffffff !important;
   color: #1e88e5 !important;
   border: 2px solid #1e88e5 !important;
-  outline: 2px solid #1e88e5 !important;
-  outline-offset: 2px !important;
+  outline: none !important;
+  outline-offset: 0 !important;
 }
 
 .btn-acao.w-100, .btn-acao.btn, .btn-acao.btn-outline-primary, .btn-acao.btn-funcionalidade {
   width: 100% !important;
-  min-width: 160px !important;
-  max-width: 220px !important;
+  min-width: 120px !important;
+  max-width: 140px !important;
   display: flex !important;
 }
 
 .btn-acao i {
-  font-size: 1.2em !important;
+  font-size: 1.1em !important;
   margin-right: 0 !important;
   margin-left: 0 !important;
-  padding-right: 0.4rem !important;
+  padding-right: 0.3rem !important;
   padding-left: 0 !important;
   flex-shrink: 0 !important;
 }
@@ -737,7 +737,7 @@ input:required:valid, select:required:valid, textarea:required:valid {
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
-  font-size: 1rem !important;
+  font-size: 0.9rem !important;
   transition: font-size 0.2s !important;
 }
 
@@ -750,12 +750,12 @@ input:required:valid, select:required:valid, textarea:required:valid {
     width: 100% !important;
     min-width: 0 !important;
     max-width: 100% !important;
-    font-size: 0.95rem !important;
-    padding-left: 0.5rem !important;
-    padding-right: 0.5rem !important;
+    font-size: 0.85rem !important;
+    padding-left: 0.4rem !important;
+    padding-right: 0.4rem !important;
   }
   .btn-acao .text {
-    font-size: 0.95rem !important;
+    font-size: 0.85rem !important;
   }
 } 
 
@@ -822,4 +822,165 @@ input:required:valid, select:required:valid, textarea:required:valid {
         min-width: 120px;
         width: 100px;
     }
+}
+
+/* Layout para as boxes de vendas e monitoramento */
+.row .col-md-6 .card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.row .col-md-6 .card .card-body {
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+.row .col-md-6 .d-flex.flex-column {
+    height: 100%;
+}
+
+.row .col-md-6 .d-flex.flex-column .card {
+    flex: 1;
+    margin-bottom: 1rem;
+}
+
+.row .col-md-6 .d-flex.flex-column .card:last-child {
+    margin-bottom: 0;
+}
+
+/* Ajuste para o conteúdo das boxes de monitoramento */
+#alertas-container,
+#produtos-mais-vendidos,
+#produtos-margem {
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Estilização específica para os botões do relatório fiscal */
+.btn-lg {
+    padding: 12px 24px !important;
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    border-radius: 12px !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+}
+
+.btn-lg:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15) !important;
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #ffc107, #ff9800) !important;
+    border: none !important;
+    color: #fff !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;
+}
+
+.btn-warning:hover {
+    background: linear-gradient(135deg, #ff9800, #f57c00) !important;
+    color: #fff !important;
+}
+
+.btn-outline-primary {
+    border-width: 2px !important;
+    font-weight: 600 !important;
+}
+
+.btn-outline-success {
+    border-width: 2px !important;
+    font-weight: 600 !important;
+}
+
+/* Garantir que as boxes de análise fiscal tenham a mesma altura */
+.row .col-md-6 .card {
+    height: 100%;
+}
+
+/* Ajuste específico para as boxes de dados fiscais e despesas */
+.row .col-md-6 .card .card-body {
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.row .col-md-6 .card .card-body p {
+    margin-bottom: 0.75rem;
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    min-height: 1.5rem;
+    text-align: left;
+}
+
+.row .col-md-6 .card .card-body p:last-child {
+    margin-bottom: 0;
+}
+
+/* Garantir que as boxes de gráficos tenham a mesma altura */
+.row .col-md-6 .grafico-box {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.row .col-md-6 .grafico-box .grafico-header {
+    flex-shrink: 0;
+}
+
+.row .col-md-6 .grafico-box .d-flex.justify-content-center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+.row .col-md-6 .grafico-box .text-muted {
+    flex-shrink: 0;
+}
+
+/* Ajuste para as boxes de vendas e monitoramento ficarem menores */
+.row .col-md-6 .card {
+    min-height: 320px !important;
+    max-height: 360px !important;
+}
+
+.row .col-md-6 .d-flex.flex-column .card {
+    min-height: 90px !important;
+    max-height: 110px !important;
+}
+
+.row .col-md-6 .d-flex.flex-column .card .card-body {
+    padding: 12px 16px !important;
+}
+
+.row .col-md-6 .card .card-body {
+    padding: 16px 20px !important;
+}
+
+/* Diminuir espaçamento entre textos nas boxes */
+.row .col-md-6 .card .card-body .text-center {
+    margin-bottom: 0.25rem !important;
+}
+
+.row .col-md-6 .card .card-body .text-center:last-child {
+    margin-bottom: 0 !important;
+}
+
+.row .col-md-6 .card .card-body h3 {
+    margin-bottom: 2px !important;
+}
+
+.row .col-md-6 .card .card-body p {
+    margin-bottom: 0.125rem !important;
+}
+
+.row .col-md-6 .d-flex.flex-column .card .card-body p {
+    margin-bottom: 0.25rem !important;
 }

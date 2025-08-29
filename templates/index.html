@@ -36,13 +36,15 @@
             <span class="fw-bold">Distribuição do Valor em Estoque (Top 5)</span>
         </div>
         <div class="d-flex justify-content-center">
-            <div style="max-width: 360px; width: 100%;">
+            <div style="max-width: 420px; width: 100%; height: 280px;">
                 <canvas id="grafico-estoque-pizza" style="max-height: 280px;"></canvas>
             </div>
         </div>
         <div class="text-muted" style="font-size: 0.9rem; margin-top:8px;">Baseado em quantidade × preço de compra.</div>
         
         <script>
+        /* eslint-disable */
+        /* jshint ignore:start */
         const ctxPizza = document.getElementById('grafico-estoque-pizza').getContext('2d');
         new Chart(ctxPizza, {
             type: 'doughnut',
@@ -70,6 +72,7 @@
                 cutout: '55%'
             }
         });
+        /* jshint ignore:end */
         </script>
     </div>
   </div>
@@ -84,6 +87,8 @@
             </div>
         </div>
         <script>
+        /* eslint-disable */
+        /* jshint ignore:start */
         const ctxBar = document.getElementById('grafico-bar-vendas').getContext('2d');
         new Chart(ctxBar, {
             type: 'bar',
@@ -107,6 +112,7 @@
                 }
             }
         });
+        /* jshint ignore:end */
         </script>
     </div>
   </div>
@@ -170,66 +176,74 @@
         <div class="table-box">
             <div class="fw-bold mb-2">Ações Rápidas</div>
             <div class="row g-3">
-                <div class="col-12 col-sm-6 col-lg-4">
-                    <a href="{{ url_for('registrar_movimentacao', tipo='venda') }}" class="btn-acao btn btn-white w-100 d-flex align-items-center justify-content-center gap-2" style="background:#ffffff; border:1.5px solid #1e88e5; color:#1e88e5; outline:2px solid #1e88e5; outline-offset:2px; border-radius:8px;" title="Lançar uma venda" data-bs-toggle="tooltip">
+                <!-- Primeira linha -->
+                <div class="col-4">
+                    <a href="{{ url_for('registrar_movimentacao', tipo='venda') }}" class="btn-acao btn btn-outline-primary w-100" title="Lançar uma venda" data-bs-toggle="tooltip">
                         <i class="bi bi-cart-check"></i>
-                        <span class="text">Registrar Venda</span>
+                        <span class="d-none d-sm-inline">Venda</span>
                     </a>
                 </div>
-                <div class="col-12 col-sm-6 col-lg-4">
-                    <a href="{{ url_for('registrar_movimentacao', tipo='compra') }}" class="btn-acao btn btn-white w-100 d-flex align-items-center justify-content-center gap-2" style="background:#ffffff; border:1.5px solid #1e88e5; color:#1e88e5; outline:2px solid #1e88e5; outline-offset:2px; border-radius:8px;" title="Lançar uma compra" data-bs-toggle="tooltip">
+                <div class="col-4">
+                    <a href="{{ url_for('registrar_movimentacao', tipo='compra') }}" class="btn-acao btn btn-outline-primary w-100" title="Lançar uma compra" data-bs-toggle="tooltip">
                         <i class="bi bi-cart-plus"></i>
-                        <span class="text">Registrar Compra</span>
+                        <span class="d-none d-sm-inline">Compra</span>
                     </a>
                 </div>
-                <div class="col-12 col-sm-6 col-lg-4">
-                    <a href="{{ url_for('adicionar_produto') }}" class="btn-acao btn btn-white w-100 d-flex align-items-center justify-content-center gap-2" style="background:#ffffff; border:1.5px solid #1e88e5; color:#1e88e5; outline:2px solid #1e88e5; outline-offset:2px; border-radius:8px;" title="Cadastrar um novo produto" data-bs-toggle="tooltip">
+                <div class="col-4">
+                    <a href="{{ url_for('adicionar_produto') }}" class="btn-acao btn btn-outline-primary w-100" title="Cadastrar um novo produto" data-bs-toggle="tooltip">
                         <i class="bi bi-plus-circle"></i>
-                        <span class="text">Cadastrar Produto</span>
+                        <span class="d-none d-sm-inline">Produto</span>
                     </a>
                 </div>
 
-                <div class="col-12 col-sm-6 col-lg-4">
-                    <a href="{{ url_for('listar_movimentacoes') }}" class="btn-acao btn btn-white w-100 d-flex align-items-center justify-content-center gap-2" style="background:#ffffff; border:1.5px solid #1e88e5; color:#1e88e5; outline:2px solid #1e88e5; outline-offset:2px; border-radius:8px;" title="Ver histórico de movimentações" data-bs-toggle="tooltip">
+                <!-- Segunda linha -->
+                <div class="col-4">
+                    <a href="{{ url_for('listar_movimentacoes') }}" class="btn-acao btn btn-outline-primary w-100" title="Ver histórico de movimentações" data-bs-toggle="tooltip">
                         <i class="bi bi-clock-history"></i>
-                        <span class="text">Histórico de Movimentações</span>
+                        <span class="d-none d-sm-inline">Histórico</span>
                     </a>
                 </div>
-                <div class="col-12 col-sm-6 col-lg-4">
-                    <a href="{{ url_for('listar_devolucoes') }}" class="btn-acao btn btn-white w-100 d-flex align-items-center justify-content-center gap-2" style="background:#ffffff; border:1.5px solid #1e88e5; color:#1e88e5; outline:2px solid #1e88e5; outline-offset:2px; border-radius:8px;" title="Ver devoluções" data-bs-toggle="tooltip">
+                <div class="col-4">
+                    <a href="{{ url_for('listar_devolucoes') }}" class="btn-acao btn btn-outline-primary w-100" title="Ver devoluções" data-bs-toggle="tooltip">
                         <i class="bi bi-arrow-return-left"></i>
-                        <span class="text">Devoluções</span>
+                        <span class="d-none d-sm-inline">Devoluções</span>
                     </a>
                 </div>
-                <div class="col-12 col-sm-6 col-lg-4">
-                    <a href="{{ url_for('inventario') }}" class="btn-acao btn btn-white w-100 d-flex align-items-center justify-content-center gap-2" style="background:#ffffff; border:1.5px solid #1e88e5; color:#1e88e5; outline:2px solid #1e88e5; outline-offset:2px; border-radius:8px;" title="Analisar inventário" data-bs-toggle="tooltip">
+                <div class="col-4">
+                    <a href="{{ url_for('inventario') }}" class="btn-acao btn btn-outline-primary w-100" title="Analisar inventário" data-bs-toggle="tooltip">
                         <i class="bi bi-box-seam"></i>
-                        <span class="text">Inventário</span>
+                        <span class="d-none d-sm-inline">Inventário</span>
                     </a>
                 </div>
 
+                <!-- Terceira linha -->
                 {% if current_user.role == 'administrador' %}
-                <div class="col-12 col-sm-6 col-lg-4">
-                    <a href="{{ url_for('previsao_demanda') }}" class="btn-acao btn btn-white w-100 d-flex align-items-center justify-content-center gap-2" style="background:#ffffff; border:1.5px solid #1e88e5; color:#1e88e5; outline:2px solid #1e88e5; outline-offset:2px; border-radius:8px;" title="Previsão de demanda" data-bs-toggle="tooltip">
+                <div class="col-4">
+                    <a href="{{ url_for('previsao_demanda') }}" class="btn-acao btn btn-outline-primary w-100" title="Previsão de demanda" data-bs-toggle="tooltip">
                         <i class="bi bi-graph-up"></i>
-                        <span class="text">Previsão de Demanda</span>
+                        <span class="d-none d-sm-inline">Previsão</span>
                     </a>
                 </div>
+                {% else %}
+                <div class="col-4"></div>
                 {% endif %}
 
                 {% if current_user.role in ['administrador','contador'] %}
-                <div class="col-12 col-sm-6 col-lg-4">
-                    <a href="{{ url_for('relatorio_fiscal') }}" class="btn-acao btn btn-white w-100 d-flex align-items-center justify-content-center gap-2" style="background:#ffffff; border:1.5px solid #1e88e5; color:#1e88e5; outline:2px solid #1e88e5; outline-offset:2px; border-radius:8px;" title="Relatório fiscal do mês" data-bs-toggle="tooltip">
+                <div class="col-4">
+                    <a href="{{ url_for('relatorio_fiscal') }}" class="btn-acao btn btn-outline-primary w-100" title="Relatório fiscal do mês" data-bs-toggle="tooltip">
                         <i class="bi bi-file-earmark-bar-graph"></i>
-                        <span class="text">Relatório Fiscal</span>
+                        <span class="d-none d-sm-inline">Fiscal</span>
                     </a>
                 </div>
-                <div class="col-12 col-sm-6 col-lg-4">
-                    <a href="{{ url_for('relatorio_geral_completo') }}" class="btn-acao btn btn-white w-100 d-flex align-items-center justify-content-center gap-2" style="background:#ffffff; border:1.5px solid #1e88e5; color:#1e88e5; outline:2px solid #1e88e5; outline-offset:2px; border-radius:8px;" title="Relatório geral completo" data-bs-toggle="tooltip">
+                <div class="col-4">
+                    <a href="{{ url_for('relatorio_geral_completo') }}" class="btn-acao btn btn-outline-primary w-100" title="Relatório geral completo" data-bs-toggle="tooltip">
                         <i class="bi bi-file-earmark-text"></i>
-                        <span class="text">Relatório Completo</span>
+                        <span class="d-none d-sm-inline">Geral</span>
                     </a>
                 </div>
+                {% else %}
+                <div class="col-4"></div>
+                <div class="col-4"></div>
                 {% endif %}
             </div>
         </div>
@@ -246,6 +260,8 @@
 </div>
 {% endif %}
 <script>
+/* eslint-disable */
+/* jshint ignore:start */
 const ctx = document.getElementById('grafico-lucro').getContext('2d');
 new Chart(ctx, {
     type: 'line',
@@ -270,5 +286,6 @@ new Chart(ctx, {
         }
     }
 });
+/* jshint ignore:end */
 </script>
 {% endblock %}
