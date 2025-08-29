@@ -16,7 +16,6 @@ from datetime import datetime
 from sqlalchemy import extract, inspect, text
 from forms import CadastroUsuarioForm, EditarUsuarioForm, EmpresaForm  # Formulário de Empresa para CRUD do site_admin
 from functools import wraps
-# Removido WeasyPrint
 import pdfkit
 from config_fiscal import (
     calcular_impostos_vendas, 
@@ -254,7 +253,7 @@ def adicionar_produto():
             preco_venda=float(form.preco_venda.data),
             quantidade_estoque=form.quantidade_estoque.data,
             usuario_id=current_user.id,
-            empresa_id=getattr(current_user, 'empresa_id', current_user.id)
+            empresa_id=empresa_id
         )
         db.session.add(novo_produto)
         db.session.commit()
@@ -268,7 +267,7 @@ def adicionar_produto():
                 valor_unitario=novo_produto.preco_compra,
                 custo_unitario=None,
                 usuario_id=current_user.id,
-                empresa_id=getattr(current_user, 'empresa_id', current_user.id)
+                empresa_id=empresa_id
             )
             db.session.add(movimentacao_inicial)
             db.session.commit()
