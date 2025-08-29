@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, flash, request, Response, jsonify, make_response
+from flask import Flask, render_template, redirect, url_for, flash, request, Response, jsonify, make_response, abort
 import csv
 from flask_sqlalchemy import SQLAlchemy
 from models import db, Produto
@@ -91,7 +91,12 @@ def logout():
 @login_required
 @role_required('administrador', 'vendedor')
 def index():
-    produtos = Produto.query.filter(Produto.empresa_id.in_(empresas_visiveis_ids())).all()
+    empresa_id_atual = getattr(current_user, 'empresa_id', None)
+    produtos = (
+        Produto.query.filter_by(empresa_id=empresa_id_atual).all()
+        if empresa_id_atual is not None else
+        Produto.query.all()
+    )
     def custo_medio(produto):
         compras = [m for m in produto.movimentacoes if m.tipo == 'compra']
         total_qtd = sum(m.quantidade for m in compras)
@@ -102,8 +107,11 @@ def index():
 
     mes = datetime.now().month
     ano = datetime.now().year
+    base_vendas_q = Movimentacao.query.filter(Movimentacao.tipo=='venda')
+    if empresa_id_atual is not None:
+        base_vendas_q = base_vendas_q.filter_by(empresa_id=empresa_id_atual)
     vendas_mes = (
-        Movimentacao.query.filter(Movimentacao.tipo=='venda', Movimentacao.empresa_id.in_(empresas_visiveis_ids()))
+        base_vendas_q
         .filter(extract('month', Movimentacao.data) == mes, extract('year', Movimentacao.data) == ano)
         .all()
     )
@@ -241,7 +249,7 @@ def adicionar_produto():
             preco_venda=float(form.preco_venda.data),
             quantidade_estoque=form.quantidade_estoque.data,
             usuario_id=current_user.id,
-            empresa_id=getattr(current_user, 'empresa_id', current_user.id)
+            empresa_id=getattr(current_user, 'empresa_id', None)
         )
         db.session.add(novo_produto)
         db.session.commit()
@@ -254,7 +262,7 @@ def adicionar_produto():
                 valor_unitario=novo_produto.preco_compra,
                 custo_unitario=None,
                 usuario_id=current_user.id,
-                empresa_id=getattr(current_user, 'empresa_id', current_user.id)
+                empresa_id=getattr(current_user, 'empresa_id', None)
             )
             db.session.add(movimentacao_inicial)
             db.session.commit()
@@ -276,7 +284,14 @@ def adicionar_produto():
 @login_required
 @role_required('administrador', 'vendedor')
 def editar_produto(produto_id):
-    produto = Produto.query.filter_by(id=produto_id, empresa_id=getattr(current_user, 'empresa_id', current_user.id)).first_or_404()
+    empresa_id_atual = getattr(current_user, 'empresa_id', None)
+    produto = (
+        Produto.query.filter_by(id=produto_id, empresa_id=empresa_id_atual).first()
+        if empresa_id_atual is not None else
+        Produto.query.filter_by(id=produto_id).first()
+    )
+    if not produto:
+        abort(404)
     form = CadastroProdutoForm(obj=produto)
     if form.validate_on_submit():
         produto.nome = form.nome.data
@@ -303,7 +318,14 @@ def editar_produto(produto_id):
 @login_required
 @role_required('administrador')
 def deletar_produto(produto_id):
-    produto = Produto.query.filter_by(id=produto_id, empresa_id=getattr(current_user, 'empresa_id', current_user.id)).first_or_404()
+    empresa_id_atual = getattr(current_user, 'empresa_id', None)
+    produto = (
+        Produto.query.filter_by(id=produto_id, empresa_id=empresa_id_atual).first()
+        if empresa_id_atual is not None else
+        Produto.query.filter_by(id=produto_id).first()
+    )
+    if not produto:
+        abort(404)
 
     try:
         # Excluir devoluções relacionadas ao produto
@@ -347,10 +369,11 @@ def deletar_produto(produto_id):
 @app.route('/movimentacoes', methods=['GET'])
 @login_required
 def listar_movimentacoes():
-    movimentacoes = (
-        Movimentacao.query.filter_by(empresa_id=getattr(current_user, 'empresa_id', current_user.id))
-        .order_by(Movimentacao.data.desc()).all()
-    )
+    empresa_id_atual = getattr(current_user, 'empresa_id', None)
+    q = Movimentacao.query
+    if empresa_id_atual is not None:
+        q = q.filter_by(empresa_id=empresa_id_atual)
+    movimentacoes = q.order_by(Movimentacao.data.desc()).all()
     return render_template('movimentacoes.html', movimentacoes=movimentacoes)
 
 # Adicionar auditoria ao registrar movimentação
@@ -740,29 +763,82 @@ def config_compartilhamento():
     - POST: cria/atualiza vínculo de compartilhamento (ativar/desativar)
     - GET: exibe lista de empresas e estado do compartilhamento
     """
-    if request.method == 'POST':
+    # Empresa selecionada para administrar permissões (via querystring)
+    empresas = Empresa.query.order_by(Empresa.nome.asc()).all()
+    empresa_id_param = request.args.get('empresa_id') or request.form.get('empresa_id')
+    if empresa_id_param:
         try:
-            empresa_b_id = int(request.form.get('empresa_b_id'))
+            base_id = int(empresa_id_param)
         except Exception:
-            flash('Empresa inválida.', 'danger')
+            base_id = None
+    else:
+        base_id = empresas[0].id if empresas else None
+
+    if request.method == 'POST':
+        # Gestão de membros (atribuir/remover vários usuários à/da empresa)
+        acao_membros = request.form.get('acao_membros')
+        if acao_membros in ('atribuir', 'remover'):
+            ids_raw = request.form.getlist('usuarios_ids')
+            try:
+                ids = [int(i) for i in ids_raw]
+            except Exception:
+                ids = []
+            usuarios_sel = Usuario.query.filter(Usuario.id.in_(ids)).all() if ids else []
+            for u in usuarios_sel:
+                u.empresa_id = (base_id if acao_membros == 'atribuir' else None)
+            if usuarios_sel:
+                db.session.commit()
+                flash('Membros atualizados com sucesso.', 'success')
+            else:
+                flash('Nenhum usuário selecionado.', 'warning')
+            return redirect(url_for('config_compartilhamento', empresa_id=base_id))
+        # Exclusão de relacionamentos (empresa ou usuário)
+        delete_rel_empresa_id = request.form.get('delete_rel_empresa_id')
+        delete_rel_usuario_id = request.form.get('delete_rel_usuario_id')
+        if delete_rel_empresa_id:
+            rel = CompartilhamentoEmpresa.query.get(int(delete_rel_empresa_id))
+            if rel:
+                db.session.delete(rel)
+                db.session.commit()
+                flash('Relacionamento de empresas removido.', 'success')
             return redirect(url_for('config_compartilhamento'))
-        acao = request.form.get('acao')  # 'ativar' ou 'desativar'
-        base_id = getattr(current_user, 'empresa_id', current_user.id)
-        if empresa_b_id == base_id:
-            flash('Selecione uma empresa diferente da sua.', 'warning')
+        if delete_rel_usuario_id:
+            relu = CompartilhamentoUsuario.query.get(int(delete_rel_usuario_id))
+            if relu:
+                db.session.delete(relu)
+                db.session.commit()
+                flash('Relacionamento de usuários removido.', 'success')
             return redirect(url_for('config_compartilhamento'))
-        rel = CompartilhamentoEmpresa.query.filter_by(empresa_a_id=base_id, empresa_b_id=empresa_b_id).first()
-        if not rel:
-            rel = CompartilhamentoEmpresa(empresa_a_id=base_id, empresa_b_id=empresa_b_id, ativo=(acao == 'ativar'))
-            db.session.add(rel)
-        else:
-            rel.ativo = (acao == 'ativar')
-        db.session.commit()
-        flash('Configuração de compartilhamento atualizada.', 'success')
-        return redirect(url_for('config_compartilhamento'))
-    empresas = Empresa.query.all()
-    base_id = getattr(current_user, 'empresa_id', current_user.id)
-    return render_template('config_compartilhamento.html', empresas=empresas, base_id=base_id)
+
+        # Fluxo antigo de relacionamento usuário↔usuário removido (não necessário)
+
+        # Nenhuma operação empresa↔empresa aqui. Apenas usuários.
+        flash('Operação concluída.', 'success')
+        return redirect(url_for('config_compartilhamento', empresa_id=base_id))
+
+    # GET: listas para exibição
+    usuarios = Usuario.query.filter_by(empresa_id=base_id).order_by(Usuario.nome.asc()).all() if base_id else []
+    usuarios_todos = Usuario.query.order_by(Usuario.nome.asc()).all()
+    # Filtra vínculos onde ambos usuários pertencem à empresa selecionada
+    rel_usuarios = (
+        CompartilhamentoUsuario.query
+        .filter(CompartilhamentoUsuario.usuario_a_id.in_([u.id for u in usuarios]))
+        .filter(CompartilhamentoUsuario.usuario_b_id.in_([u.id for u in usuarios]))
+        .order_by(CompartilhamentoUsuario.id.desc())
+        .all()
+    ) if usuarios else []
+    empresa_id_to_nome = {e.id: e.nome for e in empresas}
+    usuario_id_to_nome = {u.id: f"{u.nome} ({u.email})" for u in usuarios}
+    return render_template(
+        'config_compartilhamento.html',
+        empresas=empresas,
+        usuarios=usuarios,
+        usuarios_todos=usuarios_todos,
+        rel_usuarios=rel_usuarios,
+        empresa_id_to_nome=empresa_id_to_nome,
+        usuario_id_to_nome=usuario_id_to_nome,
+        empresa_id=base_id,
+    )
 
 @app.context_processor
 def inject_alertas_fiscais():
@@ -801,7 +877,12 @@ def auditoria():
 @login_required
 @role_required('administrador', 'vendedor')
 def api_preco_medio_produtos():
-    produtos = Produto.query.filter_by(empresa_id=getattr(current_user, 'empresa_id', current_user.id)).all()
+    empresa_id_atual = getattr(current_user, 'empresa_id', None)
+    produtos = (
+        Produto.query.filter_by(empresa_id=empresa_id_atual).all()
+        if empresa_id_atual is not None else
+        Produto.query.all()
+    )
     resultado = []
     for produto in produtos:
         compras = [m for m in produto.movimentacoes if m.tipo == 'compra']
@@ -820,7 +901,12 @@ def api_preco_medio_produtos():
 @login_required
 @role_required('administrador', 'vendedor')
 def api_preco_medio_geral():
-    produtos = Produto.query.filter_by(empresa_id=getattr(current_user, 'empresa_id', current_user.id)).all()
+    empresa_id_atual = getattr(current_user, 'empresa_id', None)
+    produtos = (
+        Produto.query.filter_by(empresa_id=empresa_id_atual).all()
+        if empresa_id_atual is not None else
+        Produto.query.all()
+    )
     total_qtd = 0
     total_valor = 0
     for produto in produtos:
