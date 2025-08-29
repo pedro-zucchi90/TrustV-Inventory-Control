@@ -15,7 +15,6 @@ class CadastroUsuarioForm(FlaskForm):
     email = StringField('E-mail', validators=[DataRequired(), Email()])  # E-mail válido
     senha = PasswordField('Senha', validators=[DataRequired(), Length(min=6)])  # Senha (mínimo 6 caracteres)
     confirmar_senha = PasswordField('Confirmar Senha', validators=[DataRequired(), EqualTo('senha', message='As senhas devem coincidir.')])  # Confirmação
-    empresa = StringField('Empresa', validators=[Optional(), Length(min=2, max=100)])
     role = SelectField('Perfil', choices=[('vendedor','Vendedor'), ('administrador','Administrador'), ('contador','Contador')], validators=[Optional()])
     submit = SubmitField('Registrar')  # Botão de envio
 

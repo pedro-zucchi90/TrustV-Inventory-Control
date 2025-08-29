@@ -998,3 +998,169 @@ input:required:valid, select:required:valid, textarea:required:valid {
 .row .col-md-6 .d-flex.flex-column .card .card-body p {
     margin-bottom: 0.125rem !important; /* Reduzido de 0.25rem para 0.125rem */
 }
+
+/* Estilos específicos para o formulário de empresas */
+.card .card-body form .d-flex.flex-column {
+    gap: 8px !important;
+}
+
+.card .card-body form .d-flex.flex-column .d-flex {
+    gap: 8px !important;
+}
+
+.card .card-body form .btn {
+    width: 100% !important;
+    margin: 0 !important;
+}
+
+.card .card-body form .d-flex .btn {
+    flex: 1 !important;
+    min-width: 0 !important;
+}
+
+/* Garantir que os botões de ação na tabela tenham largura consistente */
+.table td .d-flex.flex-column {
+    gap: 4px !important;
+}
+
+.table td .d-flex.flex-column form {
+    width: 100% !important;
+}
+
+.table td .d-flex.flex-column .btn {
+    width: 100% !important;
+    min-height: 32px !important;
+    font-size: 0.85rem !important;
+    padding: 4px 8px !important;
+}
+
+/* Estilos específicos para os botões da tabela de empresas */
+.table td .btn-primary {
+    background: #007bff !important;
+    color: #fff !important;
+    border: none !important;
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3) !important;
+    transition: all 0.2s ease !important;
+}
+.table td .btn-primary:hover {
+    background: #0056b3 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.4) !important;
+}
+
+.table td .btn-warning {
+    background: #ffc107 !important;
+    color: #212529 !important;
+    border: none !important;
+    box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3) !important;
+    transition: all 0.2s ease !important;
+}
+.table td .btn-warning:hover {
+    background: #e0a800 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(255, 193, 7, 0.4) !important;
+}
+
+.table td .btn-success {
+    background: #28a745 !important;
+    color: #fff !important;
+    border: none !important;
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3) !important;
+    transition: all 0.2s ease !important;
+}
+.table td .btn-success:hover {
+    background: #1e7e34 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.4) !important;
+}
+
+.table td .btn-danger {
+    background: #dc3545 !important;
+    color: #fff !important;
+    border: none !important;
+    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3) !important;
+    transition: all 0.2s ease !important;
+}
+.table td .btn-danger:hover {
+    background: #c82333 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.4) !important;
+}
+
+/* Estilos para os botões do formulário de empresas */
+.card .card-body form .btn-primary {
+    background: #007bff !important;
+    color: #fff !important;
+    border: none !important;
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3) !important;
+    transition: all 0.2s ease !important;
+}
+.card .card-body form .btn-primary:hover {
+    background: #0056b3 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.4) !important;
+}
+
+.card .card-body form .btn-secondary {
+    background: #6c757d !important;
+    color: #fff !important;
+    border: none !important;
+    box-shadow: 0 2px 4px rgba(108, 117, 125, 0.3) !important;
+    transition: all 0.2s ease !important;
+}
+.card .card-body form .btn-secondary:hover {
+    background: #545b62 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(108, 117, 125, 0.4) !important;
+}
+
+.card .card-body form .btn-warning {
+    background: #ffc107 !important;
+    color: #212529 !important;
+    border: none !important;
+    box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3) !important;
+    transition: all 0.2s ease !important;
+}
+.card .card-body form .btn-warning:hover {
+    background: #e0a800 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(255, 193, 7, 0.4) !important;
+}
+
+/* Estilos gerais para botões */
+.btn {
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    letter-spacing: 0.3px !important;
+}
+
+.btn-lg {
+    padding: 12px 24px !important;
+    font-size: 16px !important;
+}
+
+.btn-sm {
+    padding: 6px 12px !important;
+    font-size: 14px !important;
+}
+
+/* Estilos para flex containers */
+.d-flex.flex-column {
+    gap: 8px !important;
+}
+
+.d-flex.flex-column .btn {
+    width: 100% !important;
+}
+
+/* Estilos para badges */
+.badge {
+    font-weight: 500 !important;
+    padding: 6px 10px !important;
+    border-radius: 4px !important;
+}
+
+.badge.bg-primary {
+    background-color: #007bff !important;
+}

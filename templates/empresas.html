@@ -23,16 +23,18 @@
             {{ form.cnpj(class="form-control", placeholder="Opcional") }}
             {% for error in form.cnpj.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
           </div>
-          <div class="d-flex align-items-center" style="gap:8px;">
+          <div class="d-flex flex-column" style="gap: 8px;">
             {{ form.submit(class="btn btn-primary") }}
             {% if editar_id %}
-            <a href="{{ url_for('empresas') }}" class="btn btn-secondary">Cancelar</a>
-            <button type="submit" class="btn btn-outline-danger"
-                    formaction="{{ url_for('deletar_empresa', empresa_id=editar_id) }}"
-                    formmethod="post"
-                    onclick="return confirm('Tem certeza que deseja desativar esta empresa?');">
-              Desativar
-            </button>
+            <div class="d-flex" style="gap: 8px;">
+              <a href="{{ url_for('empresas') }}" class="btn btn-secondary flex-fill">Cancelar</a>
+              <button type="submit" class="btn btn-warning flex-fill"
+                      formaction="{{ url_for('deletar_empresa', empresa_id=editar_id) }}"
+                      formmethod="post"
+                      onclick="return confirm('Tem certeza que deseja desativar esta empresa?');">
+                Desativar
+              </button>
+            </div>
             {% endif %}
           </div>
         </form>
@@ -46,37 +48,42 @@
         <table class="table mb-0">
           <thead>
             <tr>
-              <th>#</th>
-              <th>Nome</th>
-              <th>CNPJ</th>
-              <th>Status</th>
-              <th style="width: 120px;">Ações</th>
+              <th class="align-middle text-center">#</th>
+              <th class="align-middle">Nome</th>
+              <th class="align-middle">CNPJ</th>
+              <th class="align-middle text-center">Status</th>
+              <th class="align-middle text-center" style="width: 160px;">Ações</th>
             </tr>
           </thead>
           <tbody>
             {% for e in empresas %}
             <tr {% if editar_id == e.id %}class="table-warning"{% endif %}>
-              <td>{{ e.id }}</td>
-              <td>{{ e.nome }}</td>
-              <td>{{ e.cnpj or '-' }}</td>
-              <td>
+              <td class="align-middle text-center">{{ e.id }}</td>
+              <td class="align-middle">{{ e.nome }}</td>
+              <td class="align-middle text-center">{{ e.cnpj or '-' }}</td>
+              <td class="align-middle text-center">
                 {% if e.ativo %}
                   <span class="badge bg-success">Ativa</span>
                 {% else %}
                   <span class="badge bg-secondary">Inativa</span>
                 {% endif %}
               </td>
-              <td>
-                <a class="btn btn-sm btn-outline-primary" href="{{ url_for('editar_empresa', empresa_id=e.id) }}">Editar</a>
-                {% if e.ativo %}
-                <form method="POST" action="{{ url_for('deletar_empresa', empresa_id=e.id) }}" class="d-inline" onsubmit="return confirm('Desativar esta empresa?');">
-                  <button type="submit" class="btn btn-sm btn-outline-warning">Desativar</button>
-                </form>
-                {% else %}
-                <form method="POST" action="{{ url_for('reativar_empresa', empresa_id=e.id) }}" class="d-inline" onsubmit="return confirm('Reativar esta empresa?');">
-                  <button type="submit" class="btn btn-sm btn-outline-success">Reativar</button>
-                </form>
-                {% endif %}
+              <td class="align-middle">
+                <div class="d-flex flex-column align-items-center" style="gap: 4px;">
+                  <a class="btn btn-sm btn-primary w-100" href="{{ url_for('editar_empresa', empresa_id=e.id) }}">Editar</a>
+                  {% if e.ativo %}
+                  <form method="POST" action="{{ url_for('deletar_empresa', empresa_id=e.id) }}" class="w-100" onsubmit="return confirm('Desativar esta empresa?');">
+                    <button type="submit" class="btn btn-sm btn-warning w-100">Desativar</button>
+                  </form>
+                  {% else %}
+                  <form method="POST" action="{{ url_for('reativar_empresa', empresa_id=e.id) }}" class="w-100" onsubmit="return confirm('Reativar esta empresa?');">
+                    <button type="submit" class="btn btn-sm btn-success w-100">Reativar</button>
+                  </form>
+                  {% endif %}
+                  <form method="POST" action="{{ url_for('excluir_empresa_permanentemente', empresa_id=e.id) }}" class="w-100" onsubmit="return confirm('ATENÇÃO: Esta ação EXCLUIRÁ PERMANENTEMENTE a empresa e todos os seus dados. Tem certeza?');">
+                    <button type="submit" class="btn btn-sm btn-danger w-100">Deletar</button>
+                  </form>
+                </div>
               </td>
             </tr>
             {% else %}

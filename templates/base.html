@@ -18,6 +18,7 @@
         <nav style="position: relative;">
             {% if current_user.role == 'site_admin' %}
             <a href="{{ url_for('empresas') }}" class="{% if request.endpoint in ['empresas','editar_empresa'] %}active nav-current{% endif %}"><i class="bi bi-building"></i> Empresas</a>
+            <a href="{{ url_for('usuarios') }}" class="{% if request.endpoint == 'usuarios' %}active nav-current{% endif %}"><i class="bi bi-people-fill"></i> Usuários</a>
             <a href="{{ url_for('config_compartilhamento') }}" class="{% if request.endpoint == 'config_compartilhamento' %}active nav-current{% endif %}"><i class="bi bi-people"></i> Compartilhamento</a>
             {% endif %}
             {% if current_user.role in ['administrador', 'vendedor'] %}

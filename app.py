@@ -711,33 +711,37 @@ def empresas_visiveis_ids():
         return []
     
     # Sempre incluir o empresa_id do usuário atual
-    base_id = getattr(current_user, 'empresa_id', current_user.id)
-    ids = {base_id}
+    base_id = getattr(current_user, 'empresa_id', None)
+    ids = set()
     
-    # Se o usuário não tem empresa_id, usar seu próprio ID como empresa
-    if base_id is None:
+    # Se o usuário tem empresa_id, adicionar à lista
+    if base_id is not None:
+        ids.add(base_id)
+    else:
+        # Se não tem empresa_id, usar seu próprio ID como empresa
         ids.add(current_user.id)
     
     try:
-        # Compartilhamentos entre empresas
-        ativos_emp = CompartilhamentoEmpresa.query.filter_by(ativo=True).all()
-        for c in ativos_emp:
-            if c.empresa_a_id == base_id:
-                ids.add(c.empresa_b_id)
-            if c.empresa_b_id == base_id:
-                ids.add(c.empresa_a_id)
+        # Compartilhamentos entre empresas (só se base_id não for None)
+        if base_id is not None:
+    ativos_emp = CompartilhamentoEmpresa.query.filter_by(ativo=True).all()
+    for c in ativos_emp:
+        if c.empresa_a_id == base_id:
+            ids.add(c.empresa_b_id)
+        if c.empresa_b_id == base_id:
+            ids.add(c.empresa_a_id)
         
-        # Compartilhamentos por usuário também ampliam a visibilidade para a empresa do par
-        ativos_usr = CompartilhamentoUsuario.query.filter_by(ativo=True).all()
-        for cu in ativos_usr:
-            if cu.usuario_a_id == current_user.id:
-                other = db.session.get(Usuario, cu.usuario_b_id)
-                if other and other.empresa_id:
-                    ids.add(other.empresa_id)
-            if cu.usuario_b_id == current_user.id:
-                other = db.session.get(Usuario, cu.usuario_a_id)
-                if other and other.empresa_id:
-                    ids.add(other.empresa_id)
+    # Compartilhamentos por usuário também ampliam a visibilidade para a empresa do par
+    ativos_usr = CompartilhamentoUsuario.query.filter_by(ativo=True).all()
+    for cu in ativos_usr:
+        if cu.usuario_a_id == current_user.id:
+            other = db.session.get(Usuario, cu.usuario_b_id)
+            if other and other.empresa_id:
+                ids.add(other.empresa_id)
+        if cu.usuario_b_id == current_user.id:
+            other = db.session.get(Usuario, cu.usuario_a_id)
+            if other and other.empresa_id:
+                ids.add(other.empresa_id)
     except Exception as e:
         # Em caso de erro, pelo menos retornar o empresa_id base
         print(f"Erro ao buscar compartilhamentos: {e}")
@@ -784,32 +788,186 @@ def safe_add_column_ativo_empresa():
 def config_compartilhamento():
     """Tela de configuração de compartilhamento de dados entre empresas.
 
-    - POST: cria/atualiza vínculo de compartilhamento (ativar/desativar)
-    - GET: exibe lista de empresas e estado do compartilhamento
+    - POST: ativa/desativa compartilhamento entre empresas específicas
+    - GET: exibe status atual e lista de relacionamentos entre empresas
+    
+    NOTA: Apenas site_admin pode configurar compartilhamento
     """
     if request.method == 'POST':
-        try:
-            empresa_b_id = int(request.form.get('empresa_b_id'))
-        except Exception:
-            flash('Empresa inválida.', 'danger')
-            return redirect(url_for('config_compartilhamento'))
-        acao = request.form.get('acao')  # 'ativar' ou 'desativar'
-        base_id = getattr(current_user, 'empresa_id', current_user.id)
-        if empresa_b_id == base_id:
-            flash('Selecione uma empresa diferente da sua.', 'warning')
-            return redirect(url_for('config_compartilhamento'))
-        rel = CompartilhamentoEmpresa.query.filter_by(empresa_a_id=base_id, empresa_b_id=empresa_b_id).first()
-        if not rel:
-            rel = CompartilhamentoEmpresa(empresa_a_id=base_id, empresa_b_id=empresa_b_id, ativo=(acao == 'ativar'))
-            db.session.add(rel)
-        else:
-            rel.ativo = (acao == 'ativar')
-        db.session.commit()
-        flash('Configuração de compartilhamento atualizada.', 'success')
+        if 'config_compartilhamento_empresas' in request.form:
+            # Configuração de compartilhamento entre empresas
+            acao = request.form.get('acao_compartilhamento')
+            empresa_a_id = request.form.get('empresa_a_id')
+            empresa_b_id = request.form.get('empresa_b_id')
+            
+            if not empresa_a_id or not empresa_b_id:
+                flash('Selecione ambas as empresas para configurar o compartilhamento.', 'warning')
         return redirect(url_for('config_compartilhamento'))
-    empresas = Empresa.query.all()
-    base_id = getattr(current_user, 'empresa_id', current_user.id)
-    return render_template('config_compartilhamento.html', empresas=empresas, base_id=base_id)
+            
+            if empresa_a_id == empresa_b_id:
+                flash('Selecione empresas diferentes para configurar o compartilhamento.', 'warning')
+                return redirect(url_for('config_compartilhamento'))
+            
+            try:
+                if acao == 'ativar':
+                    # Ativar compartilhamento entre as duas empresas
+                    rel_empresa = CompartilhamentoEmpresa.query.filter_by(
+                        empresa_a_id=empresa_a_id, 
+                        empresa_b_id=empresa_b_id
+            ).first()
+            
+                    if not rel_empresa:
+                        rel_empresa = CompartilhamentoEmpresa(
+                            empresa_a_id=empresa_a_id,
+                            empresa_b_id=empresa_b_id,
+                            ativo=True
+                        )
+                        db.session.add(rel_empresa)
+                    else:
+                        rel_empresa.ativo = True
+                    
+                    # Criar relacionamentos entre usuários das duas empresas
+                    usuarios_empresa_a = Usuario.query.filter_by(empresa_id=empresa_a_id).all()
+                    usuarios_empresa_b = Usuario.query.filter_by(empresa_id=empresa_b_id).all()
+                    
+                    # Remover relacionamentos existentes entre essas empresas
+                    usuario_ids_a = [u.id for u in usuarios_empresa_a]
+                    usuario_ids_b = [u.id for u in usuarios_empresa_b]
+                    
+                    CompartilhamentoUsuario.query.filter(
+                        CompartilhamentoUsuario.usuario_a_id.in_(usuario_ids_a + usuario_ids_b),
+                        CompartilhamentoUsuario.usuario_b_id.in_(usuario_ids_a + usuario_ids_b)
+                    ).delete(synchronize_session=False)
+                    
+                    # Criar relacionamentos bidirecionais entre usuários das duas empresas
+                    for usuario_a in usuarios_empresa_a:
+                        for usuario_b in usuarios_empresa_b:
+                rel = CompartilhamentoUsuario(
+                                usuario_a_id=usuario_a.id,
+                                usuario_b_id=usuario_b.id,
+                                escopo='all',
+                                ativo=True
+                )
+                db.session.add(rel)
+            
+            db.session.commit()
+                    flash('✅ Compartilhamento entre empresas ativado com sucesso!', 'success')
+                    
+                elif acao == 'desativar':
+                    # Desativar compartilhamento entre as duas empresas
+                    rel_empresa = CompartilhamentoEmpresa.query.filter_by(
+                        empresa_a_id=empresa_a_id, 
+                        empresa_b_id=empresa_b_id
+                    ).first()
+                    
+                    if rel_empresa:
+                        rel_empresa.ativo = False
+                    
+                    # Remover relacionamentos entre usuários das duas empresas
+                    usuarios_empresa_a = Usuario.query.filter_by(empresa_id=empresa_a_id).all()
+                    usuarios_empresa_b = Usuario.query.filter_by(empresa_id=empresa_b_id).all()
+                    
+                    usuario_ids_a = [u.id for u in usuarios_empresa_a]
+                    usuario_ids_b = [u.id for u in usuarios_empresa_b]
+                    
+                    CompartilhamentoUsuario.query.filter(
+                        CompartilhamentoUsuario.usuario_a_id.in_(usuario_ids_a + usuario_ids_b),
+                        CompartilhamentoUsuario.usuario_b_id.in_(usuario_ids_a + usuario_ids_b)
+                    ).delete(synchronize_session=False)
+                    
+                db.session.commit()
+                    flash('❌ Compartilhamento entre empresas desativado.', 'success')
+                
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Erro ao configurar compartilhamento: {str(e)}', 'danger')
+                print(f"Erro na configuração de compartilhamento: {e}")
+        
+        elif 'delete_rel_empresa' in request.form:
+            # Remover relacionamento específico entre empresas
+            rel_id = request.form.get('rel_id')
+            if rel_id:
+                try:
+                    rel = CompartilhamentoEmpresa.query.get(rel_id)
+            if rel:
+                        # Remover relacionamentos entre usuários das empresas
+                        usuarios_empresa_a = Usuario.query.filter_by(empresa_id=rel.empresa_a_id).all()
+                        usuarios_empresa_b = Usuario.query.filter_by(empresa_id=rel.empresa_b_id).all()
+                        
+                        usuario_ids_a = [u.id for u in usuarios_empresa_a]
+                        usuario_ids_b = [u.id for u in usuarios_empresa_b]
+                        
+                        CompartilhamentoUsuario.query.filter(
+                            CompartilhamentoUsuario.usuario_a_id.in_(usuario_ids_a + usuario_ids_b),
+                            CompartilhamentoUsuario.usuario_b_id.in_(usuario_ids_a + usuario_ids_b)
+                        ).delete(synchronize_session=False)
+                        
+                db.session.delete(rel)
+                db.session.commit()
+                        flash('Relacionamento entre empresas removido com sucesso.', 'success')
+                except Exception as e:
+                    db.session.rollback()
+                    flash(f'Erro ao remover relacionamento: {str(e)}', 'danger')
+        
+        return redirect(url_for('config_compartilhamento'))
+    
+    # Buscar dados para o template
+    empresas = Empresa.query.filter_by(ativo=True).order_by(Empresa.nome).all()
+    
+    # Buscar relacionamentos existentes entre empresas
+    relacoes_empresas = CompartilhamentoEmpresa.query.filter(
+        CompartilhamentoEmpresa.empresa_a_id != CompartilhamentoEmpresa.empresa_b_id
+    ).all()
+    
+    # Criar mapeamento de nomes de empresas
+    empresa_id_to_nome = {e.id: e.nome for e in empresas}
+    
+    # Buscar dados de teste para verificar compartilhamento
+    dados_compartilhamento = {}
+    for rel in relacoes_empresas:
+        if rel.ativo:
+            # Buscar usuários das empresas relacionadas
+            usuarios_empresa_a = Usuario.query.filter_by(empresa_id=rel.empresa_a_id).all()
+            usuarios_empresa_b = Usuario.query.filter_by(empresa_id=rel.empresa_b_id).all()
+            
+            # Buscar alguns dados de exemplo para mostrar
+            produtos_empresa_a = Produto.query.filter_by(empresa_id=rel.empresa_a_id).limit(3).all()
+            produtos_empresa_b = Produto.query.filter_by(empresa_id=rel.empresa_b_id).limit(3).all()
+            
+            dados_compartilhamento[rel.id] = {
+                'empresa_a': empresa_id_to_nome.get(rel.empresa_a_id),
+                'empresa_b': empresa_id_to_nome.get(rel.empresa_b_id),
+                'usuarios_empresa_a': len(usuarios_empresa_a),
+                'usuarios_empresa_b': len(usuarios_empresa_b),
+                'produtos_empresa_a': len(produtos_empresa_a),
+                'produtos_empresa_b': len(produtos_empresa_b),
+                'exemplo_produtos_a': [p.nome for p in produtos_empresa_a],
+                'exemplo_produtos_b': [p.nome for p in produtos_empresa_b],
+                'relacionamento': rel
+            }
+    
+    return render_template('config_compartilhamento.html', 
+                         empresas=empresas, 
+                         relacoes_empresas=relacoes_empresas,
+                         empresa_id_to_nome=empresa_id_to_nome,
+                         dados_compartilhamento=dados_compartilhamento)lalalala ↔ Sadia
+lalalala
+Usuários: 1
+Produtos: 1
+Exemplos: Bolas Grandes
+Sadia
+Usuários: 1
+Produtos: 0
+Exemplos: Nenhum produto cadastrado
+Sadia ↔ TrustV
+Sadia
+Usuários: 1
+Produtos: 0
+Exemplos: Nenhum produto cadastrado
+TrustV
+Usuários: 1
+Produtos: 0
+Exemplos: Nenhum produto cadastrado
 
 @app.context_processor
 def inject_alertas_fiscais():
@@ -884,20 +1042,14 @@ def registrar():
         if Usuario.query.filter_by(email=form.email.data).first():
             flash('Este e-mail já está cadastrado.', 'danger')
             return redirect(url_for('registrar'))
-        # Criar/associar empresa simples pelo nome informado (se houver campo)
-        empresa_nome = getattr(form, 'empresa', None).data if hasattr(form, 'empresa') else None
-        empresa = None
-        if empresa_nome:
-            empresa = Empresa.query.filter_by(nome=empresa_nome).first()
-            if not empresa:
-                empresa = Empresa(nome=empresa_nome)
-                db.session.add(empresa)
-                db.session.flush()
+        
+        # Criar usuário sem empresa (empresa_id será None)
+        # Apenas o administrador do sistema poderá relacionar usuários com empresas
         usuario = Usuario(
             nome=form.nome.data,
             email=form.email.data,
             role=(getattr(form, 'role', None).data if hasattr(form, 'role') else 'vendedor'),
-            empresa_id=(empresa.id if empresa else None)
+            empresa_id=None  # Usuário criado sem empresa
         )
         usuario.set_password(form.senha.data)
         db.session.add(usuario)
@@ -967,14 +1119,13 @@ def deletar_empresa(empresa_id):
         flash('Empresa não encontrada.', 'danger')
         return redirect(url_for('empresas'))
 
-    # Verificações de vínculo: usuários, produtos, movimentações, devoluções, compartilhamentos
+    # Verificações de vínculo: usuários, produtos, movimentações, compartilhamentos
     tem_usuario = db.session.execute(text('SELECT 1 FROM usuario WHERE empresa_id = :id LIMIT 1'), {'id': empresa.id}).first() is not None
     tem_produto = db.session.execute(text('SELECT 1 FROM produto WHERE empresa_id = :id LIMIT 1'), {'id': empresa.id}).first() is not None
     tem_mov = db.session.execute(text('SELECT 1 FROM movimentacao WHERE empresa_id = :id LIMIT 1'), {'id': empresa.id}).first() is not None
-    tem_dev = db.session.execute(text('SELECT 1 FROM devolucao WHERE empresa_id = :id LIMIT 1'), {'id': empresa.id}).first() is not None
     tem_comp = db.session.execute(text('SELECT 1 FROM compartilhamento_empresa WHERE empresa_a_id = :id OR empresa_b_id = :id LIMIT 1'), {'id': empresa.id}).first() is not None
 
-    if any([tem_usuario, tem_produto, tem_mov, tem_dev, tem_comp]):
+    if any([tem_usuario, tem_produto, tem_mov, tem_comp]):
         flash('Não é possível excluir: a empresa possui vínculos com dados.', 'warning')
         return redirect(url_for('editar_empresa', empresa_id=empresa.id))
 
@@ -997,6 +1148,33 @@ def reativar_empresa(empresa_id):
     empresa.ativo = True
     db.session.commit()
     flash('Empresa reativada com sucesso.', 'success')
+    return redirect(url_for('empresas'))
+
+
+@app.route('/empresas/<int:empresa_id>/excluir_permanentemente', methods=['POST'])
+@login_required
+@role_required('site_admin')
+def excluir_empresa_permanentemente(empresa_id):
+    """Exclui permanentemente uma empresa (hard delete) após verificar vínculos."""
+    empresa = db.session.get(Empresa, empresa_id)
+    if not empresa:
+        flash('Empresa não encontrada.', 'danger')
+        return redirect(url_for('empresas'))
+
+    # Verificações de vínculo: usuários, produtos, movimentações, compartilhamentos
+    tem_usuario = db.session.execute(text('SELECT 1 FROM usuario WHERE empresa_id = :id LIMIT 1'), {'id': empresa.id}).first() is not None
+    tem_produto = db.session.execute(text('SELECT 1 FROM produto WHERE empresa_id = :id LIMIT 1'), {'id': empresa.id}).first() is not None
+    tem_mov = db.session.execute(text('SELECT 1 FROM movimentacao WHERE empresa_id = :id LIMIT 1'), {'id': empresa.id}).first() is not None
+    tem_comp = db.session.execute(text('SELECT 1 FROM compartilhamento_empresa WHERE empresa_a_id = :id OR empresa_b_id = :id LIMIT 1'), {'id': empresa.id}).first() is not None
+
+    if any([tem_usuario, tem_produto, tem_mov, tem_comp]):
+        flash('Não é possível excluir permanentemente: a empresa possui vínculos com dados.', 'warning')
+        return redirect(url_for('empresas'))
+
+    # Hard delete (exclusão permanente)
+    db.session.delete(empresa)
+    db.session.commit()
+    flash('Empresa excluída permanentemente com sucesso.', 'success')
     return redirect(url_for('empresas'))
 
 @app.route('/editar_conta', methods=['GET', 'POST'])
@@ -1743,6 +1921,86 @@ def corrigir_produtos_empresa():
         flash(f'Erro ao corrigir produtos: {e}', 'danger')
     
     return redirect(url_for('index'))
+
+# ---------------------- Administração de Usuários (site_admin) ----------------------
+@app.route('/usuarios', methods=['GET', 'POST'])
+@login_required
+@role_required('site_admin')
+def usuarios():
+    """Listagem e gerenciamento de usuários (somente para site_admin).
+
+    - GET: lista todos os usuários
+    - POST: atualiza empresa_id de um usuário
+    """
+    if request.method == 'POST':
+        usuario_id = request.form.get('usuario_id')
+        empresa_id = request.form.get('empresa_id')
+        
+        if usuario_id and empresa_id:
+            usuario = Usuario.query.get(usuario_id)
+            empresa = Empresa.query.get(empresa_id)
+            
+            if usuario and empresa:
+                usuario.empresa_id = empresa.id
+                db.session.commit()
+                flash(f'Usuário {usuario.nome} associado à empresa {empresa.nome}.', 'success')
+            else:
+                flash('Usuário ou empresa não encontrados.', 'danger')
+        elif usuario_id and empresa_id == '':
+            # Remover empresa do usuário
+            usuario = Usuario.query.get(usuario_id)
+            if usuario:
+                usuario.empresa_id = None
+                db.session.commit()
+                flash(f'Usuário {usuario.nome} removido da empresa.', 'success')
+    
+    usuarios = Usuario.query.order_by(Usuario.nome.asc()).all()
+    empresas = Empresa.query.order_by(Empresa.nome.asc()).all()
+    
+    return render_template('usuarios.html', usuarios=usuarios, empresas=empresas)
+
+@app.route('/teste_compartilhamento')
+@login_required
+@role_required('site_admin')
+def teste_compartilhamento():
+    """Rota para testar o compartilhamento em tempo real"""
+    
+    # Buscar todas as empresas ativas
+    empresas = Empresa.query.filter_by(ativo=True).order_by(Empresa.nome).all()
+    
+    # Buscar todos os relacionamentos ativos entre empresas
+    relacoes_ativas = CompartilhamentoEmpresa.query.filter(
+        CompartilhamentoEmpresa.empresa_a_id != CompartilhamentoEmpresa.empresa_b_id,
+        CompartilhamentoEmpresa.ativo == True
+    ).all()
+    
+    # Buscar dados compartilhados para cada relacionamento
+    dados_compartilhados = {}
+    for rel in relacoes_ativas:
+        # Buscar dados das empresas relacionadas
+        produtos_empresa_a = Produto.query.filter_by(empresa_id=rel.empresa_a_id).limit(5).all()
+        produtos_empresa_b = Produto.query.filter_by(empresa_id=rel.empresa_b_id).limit(5).all()
+        
+        movimentacoes_empresa_a = Movimentacao.query.filter_by(empresa_id=rel.empresa_a_id).limit(5).all()
+        movimentacoes_empresa_b = Movimentacao.query.filter_by(empresa_id=rel.empresa_b_id).limit(5).all()
+        
+        dados_compartilhados[rel.id] = {
+            'empresa_a': Empresa.query.get(rel.empresa_a_id),
+            'empresa_b': Empresa.query.get(rel.empresa_b_id),
+            'produtos_a': produtos_empresa_a,
+            'produtos_b': produtos_empresa_b,
+            'movimentacoes_a': movimentacoes_empresa_a,
+            'movimentacoes_b': movimentacoes_empresa_b,
+            'total_produtos_a': Produto.query.filter_by(empresa_id=rel.empresa_a_id).count(),
+            'total_produtos_b': Produto.query.filter_by(empresa_id=rel.empresa_b_id).count(),
+            'total_movimentacoes_a': Movimentacao.query.filter_by(empresa_id=rel.empresa_a_id).count(),
+            'total_movimentacoes_b': Movimentacao.query.filter_by(empresa_id=rel.empresa_b_id).count(),
+            'relacionamento': rel
+        }
+    
+    return render_template('teste_compartilhamento.html',
+                         empresas=empresas,
+                         dados_compartilhados=dados_compartilhados)
 
 if __name__ == '__main__':
     with app.app_context():
