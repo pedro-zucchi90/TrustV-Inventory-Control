@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Gerenciamento de Usuários</h2>
+        <a href="{{ url_for('empresas') }}" class="btn btn-outline-primary">
+            <i class="bi bi-building"></i> Gerenciar Empresas
+        </a>
+    </div>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <div class="card shadow-lg border-0">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Usuários do Sistema</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th class="align-middle">Nome</th>
+                            <th class="align-middle">E-mail</th>
+                            <th class="align-middle text-center">Perfil</th>
+                            <th class="align-middle text-center">Empresa Atual</th>
+                            <th class="align-middle text-center">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for usuario in usuarios %}
+                        <tr>
+                            <td class="align-middle">{{ usuario.nome }}</td>
+                            <td class="align-middle">{{ usuario.email }}</td>
+                            <td class="align-middle text-center">
+                                <span class="badge bg-{{ 'success' if usuario.role == 'administrador' else 'info' if usuario.role == 'vendedor' else 'warning' if usuario.role == 'contador' else 'secondary' }}">
+                                    {{ usuario.role|title }}
+                                </span>
+                            </td>
+                            <td class="align-middle text-center">
+                                {% if usuario.empresa_id %}
+                                    {% set empresa = empresas|selectattr('id', 'equalto', usuario.empresa_id)|first %}
+                                    {% if empresa %}
+                                        <span class="badge bg-success">{{ empresa.nome }}</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Empresa não encontrada</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge bg-secondary">Sem empresa</span>
+                                {% endif %}
+                            </td>
+                            <td class="align-middle">
+                                <form method="POST" style="display: inline;">
+                                    <input type="hidden" name="usuario_id" value="{{ usuario.id }}">
+                                    <select name="empresa_id" class="form-select form-select-sm" style="width: auto; display: inline-block;">
+                                        <option value="">-- Sem empresa --</option>
+                                        {% for empresa in empresas %}
+                                            <option value="{{ empresa.id }}" {{ 'selected' if usuario.empresa_id == empresa.id }}>
+                                                {{ empresa.nome }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="submit" class="btn btn-primary btn-sm ms-2">
+                                        <i class="bi bi-save"></i> Salvar
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center">Nenhum usuário encontrado.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-4">
+        <div class="alert alert-info">
+            <h6><i class="bi bi-info-circle"></i> Como funciona:</h6>
+            <ul class="mb-0">
+                <li>Usuários são criados sem empresa associada</li>
+                <li>Use o seletor acima para associar usuários a empresas</li>
+                <li>Usuários sem empresa não podem acessar funcionalidades que dependem de dados empresariais</li>
+                <li>Para criar novas empresas, use o botão "Gerenciar Empresas"</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
