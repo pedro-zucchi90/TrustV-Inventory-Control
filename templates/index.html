@@ -1,5 +1,19 @@
 {% extends 'base.html' %}
 {% block content %}
+
+{# ALERTA TOPBAR: será posicionado pelo CSS (.topbar-notification).
+   IMPORTANTE: manter a classe alert-*, ex.: alert-success / alert-danger, e adicionar topbar-notification. #}
+{% if alertas|length > 0 %}
+<div class="alert alert-danger topbar-notification d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-exclamation-triangle-fill me-2"></i> <strong>Alerta Crítico</strong>
+        {% for a in alertas %} Produto {{ a.produto }} vendido abaixo do custo em {{ a.data }}. {% endfor %}
+    </span>
+    <form method="get" action="{{ url_for('listar_movimentacoes') }}" class="mb-0">
+        <button type="submit" class="btn btn-danger btn-sm">Verificar</button>
+    </form>
+</div>
+{% endif %}
+
 <div class="cards">
     <div class="card-indicador estoque">
         <div class="icon"><i class="bi bi-box-seam"></i></div>
@@ -16,8 +30,8 @@
         <div class="valor">R$ {{ margem_lucro|float|round(2)|replace('.', ',') }}</div>
         <div class="desc">Margem de Lucro do Mês</div>
     </div>
-
 </div>
+
 <div class="grafico-box">
     <div class="grafico-header">
         <span class="fw-bold">Evolução da Margem de Lucro (Últimos 6 meses)</span>
@@ -29,7 +43,9 @@
     </div>
     <canvas id="grafico-lucro" height="80"></canvas>
 </div>
-<div class="row g-4">
+
+{# Gráficos lado a lado: adicionei a classe "graficos" na row para equalizar altura #}
+<div class="row g-4 graficos">
   <div class="col-md-6">
     <div class="grafico-box" style="margin-bottom: 40px;">
         <div class="grafico-header">
@@ -41,7 +57,7 @@
             </div>
         </div>
         <div class="text-muted" style="font-size: 0.9rem; margin-top:8px;">Baseado em quantidade × preço de compra.</div>
-        
+
         <script>
         /* eslint-disable */
         /* jshint ignore:start */
@@ -76,6 +92,7 @@
         </script>
     </div>
   </div>
+
   <div class="col-md-6">
     <div class="grafico-box" style="margin-bottom: 40px;">
         <div class="grafico-header">
@@ -155,7 +172,9 @@
         </tbody>
     </table>
 </div>
-<div class="row g-4">
+
+{# Aqui adicionamos 'equal-height' para igualar as alturas das duas colunas abaixo #}
+<div class="row g-4 equal-height">
     <div class="col-md-6">
         <div class="table-box">
             <div class="fw-bold mb-2">Últimas Transações</div>
@@ -176,6 +195,7 @@
             </div>
         </div>
     </div>
+
     <div class="col-md-6">
         <div class="table-box">
             <div class="fw-bold mb-2">Ações Rápidas</div>
@@ -253,16 +273,7 @@
         </div>
     </div>
 </div>
-{% if alertas|length > 0 %}
-<div class="alert alert-danger d-flex justify-content-between align-items-center mt-4">
-    <span><i class="bi bi-exclamation-triangle-fill me-2"></i> <strong>Alerta Crítico</strong>
-        {% for a in alertas %} Produto {{ a.produto }} vendido abaixo do custo em {{ a.data }}. {% endfor %}
-    </span>
-    <form method="get" action="{{ url_for('listar_movimentacoes') }}" class="mb-0">
-        <button type="submit" class="btn btn-danger btn-sm">Verificar</button>
-    </form>
-</div>
-{% endif %}
+
 <script>
 /* eslint-disable */
 /* jshint ignore:start */
@@ -292,4 +303,5 @@ new Chart(ctx, {
 });
 /* jshint ignore:end */
 </script>
+
 {% endblock %}
