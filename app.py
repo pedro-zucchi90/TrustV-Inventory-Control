@@ -16,7 +16,6 @@ from datetime import datetime
 from sqlalchemy import extract, inspect, text
 from forms import CadastroUsuarioForm, EditarUsuarioForm, EmpresaForm  # Formulário de Empresa para CRUD do site_admin
 from functools import wraps
-# Removido WeasyPrint
 import pdfkit
 from config_fiscal import (
     calcular_impostos_vendas, 
@@ -242,6 +241,11 @@ def index():
 def adicionar_produto():
     form = CadastroProdutoForm()
     if form.validate_on_submit():
+        # Garantir que o empresa_id seja sempre definido
+        empresa_id = getattr(current_user, 'empresa_id', current_user.id)
+        if empresa_id is None:
+            empresa_id = current_user.id
+        
         novo_produto = Produto(
             nome=form.nome.data,
             descricao=form.descricao.data,
@@ -249,10 +253,11 @@ def adicionar_produto():
             preco_venda=float(form.preco_venda.data),
             quantidade_estoque=form.quantidade_estoque.data,
             usuario_id=current_user.id,
-            empresa_id=getattr(current_user, 'empresa_id', None)
+            empresa_id=empresa_id
         )
         db.session.add(novo_produto)
         db.session.commit()
+        
         # Adiciona movimentação de compra automática para o estoque inicial
         if novo_produto.quantidade_estoque > 0:
             movimentacao_inicial = Movimentacao(
@@ -262,10 +267,11 @@ def adicionar_produto():
                 valor_unitario=novo_produto.preco_compra,
                 custo_unitario=None,
                 usuario_id=current_user.id,
-                empresa_id=getattr(current_user, 'empresa_id', None)
+                empresa_id=empresa_id
             )
             db.session.add(movimentacao_inicial)
             db.session.commit()
+        
         auditoria = Auditoria(
             usuario_id=current_user.id,
             acao='Cadastro',
@@ -284,14 +290,7 @@ def adicionar_produto():
 @login_required
 @role_required('administrador', 'vendedor')
 def editar_produto(produto_id):
-    empresa_id_atual = getattr(current_user, 'empresa_id', None)
-    produto = (
-        Produto.query.filter_by(id=produto_id, empresa_id=empresa_id_atual).first()
-        if empresa_id_atual is not None else
-        Produto.query.filter_by(id=produto_id).first()
-    )
-    if not produto:
-        abort(404)
+    produto = Produto.query.filter_by(id=produto_id, empresa_id=getattr(current_user, 'empresa_id', current_user.id)).first_or_404()
     form = CadastroProdutoForm(obj=produto)
     if form.validate_on_submit():
         produto.nome = form.nome.data
@@ -318,14 +317,7 @@ def editar_produto(produto_id):
 @login_required
 @role_required('administrador')
 def deletar_produto(produto_id):
-    empresa_id_atual = getattr(current_user, 'empresa_id', None)
-    produto = (
-        Produto.query.filter_by(id=produto_id, empresa_id=empresa_id_atual).first()
-        if empresa_id_atual is not None else
-        Produto.query.filter_by(id=produto_id).first()
-    )
-    if not produto:
-        abort(404)
+    produto = Produto.query.filter_by(id=produto_id, empresa_id=getattr(current_user, 'empresa_id', current_user.id)).first_or_404()
 
     try:
         # Excluir devoluções relacionadas ao produto
@@ -369,11 +361,10 @@ def deletar_produto(produto_id):
 @app.route('/movimentacoes', methods=['GET'])
 @login_required
 def listar_movimentacoes():
-    empresa_id_atual = getattr(current_user, 'empresa_id', None)
-    q = Movimentacao.query
-    if empresa_id_atual is not None:
-        q = q.filter_by(empresa_id=empresa_id_atual)
-    movimentacoes = q.order_by(Movimentacao.data.desc()).all()
+    movimentacoes = (
+        Movimentacao.query.filter_by(empresa_id=getattr(current_user, 'empresa_id', current_user.id))
+        .order_by(Movimentacao.data.desc()).all()
+    )
     return render_template('movimentacoes.html', movimentacoes=movimentacoes)
 
 # Adicionar auditoria ao registrar movimentação
@@ -388,7 +379,12 @@ def registrar_movimentacao():
     produtos_usuario = Produto.query.filter(Produto.empresa_id.in_(empresas_visiveis_ids())).all()
     form.produto_id.choices = [(p.id, p.nome) for p in produtos_usuario]
     if form.validate_on_submit():
-        produto = Produto.query.filter_by(id=form.produto_id.data, empresa_id=getattr(current_user, 'empresa_id', current_user.id)).first_or_404()
+        # Garantir que o empresa_id seja sempre definido
+        empresa_id = getattr(current_user, 'empresa_id', current_user.id)
+        if empresa_id is None:
+            empresa_id = current_user.id
+        
+        produto = Produto.query.filter_by(id=form.produto_id.data, empresa_id=empresa_id).first_or_404()
         if form.tipo.data == 'venda':
             if form.quantidade.data > produto.quantidade_estoque:
                 flash('Não é possível vender mais do que o estoque disponível!', 'danger')
@@ -464,7 +460,7 @@ def registrar_movimentacao():
             despesas_administrativas=despesas_administrativas,
             despesas_comerciais=despesas_comerciais,
             usuario_id=current_user.id,
-            empresa_id=getattr(current_user, 'empresa_id', current_user.id)
+            empresa_id=empresa_id
         )
         if form.tipo.data == 'compra':
             produto.quantidade_estoque += form.quantidade.data
@@ -705,26 +701,50 @@ def empresas_visiveis_ids():
     """Retorna lista de empresa_ids visíveis para o usuário atual: própria + compartilhadas bidirecionalmente ativas."""
     if not current_user.is_authenticated:
         return []
-    base_id = getattr(current_user, 'empresa_id', current_user.id)
-    ids = {base_id}
-    ativos_emp = CompartilhamentoEmpresa.query.filter_by(ativo=True).all()
-    for c in ativos_emp:
-        if c.empresa_a_id == base_id:
-            ids.add(c.empresa_b_id)
-        if c.empresa_b_id == base_id:
-            ids.add(c.empresa_a_id)
-    # Compartilhamentos por usuário também ampliam a visibilidade para a empresa do par
-    ativos_usr = CompartilhamentoUsuario.query.filter_by(ativo=True).all()
-    for cu in ativos_usr:
-        if cu.usuario_a_id == current_user.id:
-            other = db.session.get(Usuario, cu.usuario_b_id)
-            if other and other.empresa_id:
-                ids.add(other.empresa_id)
-        if cu.usuario_b_id == current_user.id:
-            other = db.session.get(Usuario, cu.usuario_a_id)
-            if other and other.empresa_id:
-                ids.add(other.empresa_id)
-    return list(ids)
+    
+    # Sempre incluir o empresa_id do usuário atual
+    base_id = getattr(current_user, 'empresa_id', None)
+    ids = set()
+    
+    # Se o usuário tem empresa_id, adicionar à lista
+    if base_id is not None:
+        ids.add(base_id)
+    else:
+        # Se não tem empresa_id, usar seu próprio ID como empresa
+        ids.add(current_user.id)
+    
+    try:
+        # Compartilhamentos entre empresas (só se base_id não for None)
+        if base_id is not None:
+            ativos_emp = CompartilhamentoEmpresa.query.filter_by(ativo=True).all()
+            for c in ativos_emp:
+                if c.empresa_a_id == base_id:
+                    ids.add(c.empresa_b_id)
+                if c.empresa_b_id == base_id:
+                    ids.add(c.empresa_a_id)
+        
+        # Compartilhamentos por usuário também ampliam a visibilidade para a empresa do par
+        ativos_usr = CompartilhamentoUsuario.query.filter_by(ativo=True).all()
+        for cu in ativos_usr:
+            if cu.usuario_a_id == current_user.id:
+                other = db.session.get(Usuario, cu.usuario_b_id)
+                if other and other.empresa_id:
+                    ids.add(other.empresa_id)
+            if cu.usuario_b_id == current_user.id:
+                other = db.session.get(Usuario, cu.usuario_a_id)
+                if other and other.empresa_id:
+                    ids.add(other.empresa_id)
+    except Exception as e:
+        # Em caso de erro, pelo menos retornar o empresa_id base
+        print(f"Erro ao buscar compartilhamentos: {e}")
+    
+    # Garantir que sempre retorne pelo menos um ID
+    if not ids:
+        ids.add(current_user.id)
+    
+    result = list(ids)
+    print(f"DEBUG: empresas_visiveis_ids() retornou: {result} para usuário {current_user.id}")
+    return result
 
 def seed_site_admin():
     """Cria usuário admin do site (não registrável) caso não exista."""
@@ -760,8 +780,10 @@ def safe_add_column_ativo_empresa():
 def config_compartilhamento():
     """Tela de configuração de compartilhamento de dados entre empresas.
 
-    - POST: cria/atualiza vínculo de compartilhamento (ativar/desativar)
-    - GET: exibe lista de empresas e estado do compartilhamento
+    - POST: ativa/desativa compartilhamento entre empresas específicas
+    - GET: exibe status atual e lista de relacionamentos entre empresas
+    
+    NOTA: Apenas site_admin pode configurar compartilhamento
     """
     # Empresa selecionada para administrar permissões (via querystring)
     empresas = Empresa.query.order_by(Empresa.nome.asc()).all()
@@ -775,70 +797,28 @@ def config_compartilhamento():
         base_id = empresas[0].id if empresas else None
 
     if request.method == 'POST':
-        # Gestão de membros (atribuir/remover vários usuários à/da empresa)
-        acao_membros = request.form.get('acao_membros')
-        if acao_membros in ('atribuir', 'remover'):
-            ids_raw = request.form.getlist('usuarios_ids')
-            try:
-                ids = [int(i) for i in ids_raw]
-            except Exception:
-                ids = []
-            usuarios_sel = Usuario.query.filter(Usuario.id.in_(ids)).all() if ids else []
-            for u in usuarios_sel:
-                u.empresa_id = (base_id if acao_membros == 'atribuir' else None)
-            if usuarios_sel:
-                db.session.commit()
-                flash('Membros atualizados com sucesso.', 'success')
-            else:
-                flash('Nenhum usuário selecionado.', 'warning')
-            return redirect(url_for('config_compartilhamento', empresa_id=base_id))
-        # Exclusão de relacionamentos (empresa ou usuário)
-        delete_rel_empresa_id = request.form.get('delete_rel_empresa_id')
-        delete_rel_usuario_id = request.form.get('delete_rel_usuario_id')
-        if delete_rel_empresa_id:
-            rel = CompartilhamentoEmpresa.query.get(int(delete_rel_empresa_id))
-            if rel:
-                db.session.delete(rel)
-                db.session.commit()
-                flash('Relacionamento de empresas removido.', 'success')
+        try:
+            empresa_b_id = int(request.form.get('empresa_b_id'))
+        except Exception:
+            flash('Empresa inválida.', 'danger')
             return redirect(url_for('config_compartilhamento'))
-        if delete_rel_usuario_id:
-            relu = CompartilhamentoUsuario.query.get(int(delete_rel_usuario_id))
-            if relu:
-                db.session.delete(relu)
-                db.session.commit()
-                flash('Relacionamento de usuários removido.', 'success')
+        acao = request.form.get('acao')  # 'ativar' ou 'desativar'
+        base_id = getattr(current_user, 'empresa_id', current_user.id)
+        if empresa_b_id == base_id:
+            flash('Selecione uma empresa diferente da sua.', 'warning')
             return redirect(url_for('config_compartilhamento'))
-
-        # Fluxo antigo de relacionamento usuário↔usuário removido (não necessário)
-
-        # Nenhuma operação empresa↔empresa aqui. Apenas usuários.
-        flash('Operação concluída.', 'success')
-        return redirect(url_for('config_compartilhamento', empresa_id=base_id))
-
-    # GET: listas para exibição
-    usuarios = Usuario.query.filter_by(empresa_id=base_id).order_by(Usuario.nome.asc()).all() if base_id else []
-    usuarios_todos = Usuario.query.order_by(Usuario.nome.asc()).all()
-    # Filtra vínculos onde ambos usuários pertencem à empresa selecionada
-    rel_usuarios = (
-        CompartilhamentoUsuario.query
-        .filter(CompartilhamentoUsuario.usuario_a_id.in_([u.id for u in usuarios]))
-        .filter(CompartilhamentoUsuario.usuario_b_id.in_([u.id for u in usuarios]))
-        .order_by(CompartilhamentoUsuario.id.desc())
-        .all()
-    ) if usuarios else []
-    empresa_id_to_nome = {e.id: e.nome for e in empresas}
-    usuario_id_to_nome = {u.id: f"{u.nome} ({u.email})" for u in usuarios}
-    return render_template(
-        'config_compartilhamento.html',
-        empresas=empresas,
-        usuarios=usuarios,
-        usuarios_todos=usuarios_todos,
-        rel_usuarios=rel_usuarios,
-        empresa_id_to_nome=empresa_id_to_nome,
-        usuario_id_to_nome=usuario_id_to_nome,
-        empresa_id=base_id,
-    )
+        rel = CompartilhamentoEmpresa.query.filter_by(empresa_a_id=base_id, empresa_b_id=empresa_b_id).first()
+        if not rel:
+            rel = CompartilhamentoEmpresa(empresa_a_id=base_id, empresa_b_id=empresa_b_id, ativo=(acao == 'ativar'))
+            db.session.add(rel)
+        else:
+            rel.ativo = (acao == 'ativar')
+        db.session.commit()
+        flash('Configuração de compartilhamento atualizada.', 'success')
+        return redirect(url_for('config_compartilhamento'))
+    empresas = Empresa.query.all()
+    base_id = getattr(current_user, 'empresa_id', current_user.id)
+    return render_template('config_compartilhamento.html', empresas=empresas, base_id=base_id)
 
 @app.context_processor
 def inject_alertas_fiscais():
@@ -923,20 +903,14 @@ def registrar():
         if Usuario.query.filter_by(email=form.email.data).first():
             flash('Este e-mail já está cadastrado.', 'danger')
             return redirect(url_for('registrar'))
-        # Criar/associar empresa simples pelo nome informado (se houver campo)
-        empresa_nome = getattr(form, 'empresa', None).data if hasattr(form, 'empresa') else None
-        empresa = None
-        if empresa_nome:
-            empresa = Empresa.query.filter_by(nome=empresa_nome).first()
-            if not empresa:
-                empresa = Empresa(nome=empresa_nome)
-                db.session.add(empresa)
-                db.session.flush()
+        
+        # Criar usuário sem empresa (empresa_id será None)
+        # Apenas o administrador do sistema poderá relacionar usuários com empresas
         usuario = Usuario(
             nome=form.nome.data,
             email=form.email.data,
             role=(getattr(form, 'role', None).data if hasattr(form, 'role') else 'vendedor'),
-            empresa_id=(empresa.id if empresa else None)
+            empresa_id=None  # Usuário criado sem empresa
         )
         usuario.set_password(form.senha.data)
         db.session.add(usuario)
@@ -1006,14 +980,13 @@ def deletar_empresa(empresa_id):
         flash('Empresa não encontrada.', 'danger')
         return redirect(url_for('empresas'))
 
-    # Verificações de vínculo: usuários, produtos, movimentações, devoluções, compartilhamentos
+    # Verificações de vínculo: usuários, produtos, movimentações, compartilhamentos
     tem_usuario = db.session.execute(text('SELECT 1 FROM usuario WHERE empresa_id = :id LIMIT 1'), {'id': empresa.id}).first() is not None
     tem_produto = db.session.execute(text('SELECT 1 FROM produto WHERE empresa_id = :id LIMIT 1'), {'id': empresa.id}).first() is not None
     tem_mov = db.session.execute(text('SELECT 1 FROM movimentacao WHERE empresa_id = :id LIMIT 1'), {'id': empresa.id}).first() is not None
-    tem_dev = db.session.execute(text('SELECT 1 FROM devolucao WHERE empresa_id = :id LIMIT 1'), {'id': empresa.id}).first() is not None
     tem_comp = db.session.execute(text('SELECT 1 FROM compartilhamento_empresa WHERE empresa_a_id = :id OR empresa_b_id = :id LIMIT 1'), {'id': empresa.id}).first() is not None
 
-    if any([tem_usuario, tem_produto, tem_mov, tem_dev, tem_comp]):
+    if any([tem_usuario, tem_produto, tem_mov, tem_comp]):
         flash('Não é possível excluir: a empresa possui vínculos com dados.', 'warning')
         return redirect(url_for('editar_empresa', empresa_id=empresa.id))
 
@@ -1036,6 +1009,33 @@ def reativar_empresa(empresa_id):
     empresa.ativo = True
     db.session.commit()
     flash('Empresa reativada com sucesso.', 'success')
+    return redirect(url_for('empresas'))
+
+
+@app.route('/empresas/<int:empresa_id>/excluir_permanentemente', methods=['POST'])
+@login_required
+@role_required('site_admin')
+def excluir_empresa_permanentemente(empresa_id):
+    """Exclui permanentemente uma empresa (hard delete) após verificar vínculos."""
+    empresa = db.session.get(Empresa, empresa_id)
+    if not empresa:
+        flash('Empresa não encontrada.', 'danger')
+        return redirect(url_for('empresas'))
+
+    # Verificações de vínculo: usuários, produtos, movimentações, compartilhamentos
+    tem_usuario = db.session.execute(text('SELECT 1 FROM usuario WHERE empresa_id = :id LIMIT 1'), {'id': empresa.id}).first() is not None
+    tem_produto = db.session.execute(text('SELECT 1 FROM produto WHERE empresa_id = :id LIMIT 1'), {'id': empresa.id}).first() is not None
+    tem_mov = db.session.execute(text('SELECT 1 FROM movimentacao WHERE empresa_id = :id LIMIT 1'), {'id': empresa.id}).first() is not None
+    tem_comp = db.session.execute(text('SELECT 1 FROM compartilhamento_empresa WHERE empresa_a_id = :id OR empresa_b_id = :id LIMIT 1'), {'id': empresa.id}).first() is not None
+
+    if any([tem_usuario, tem_produto, tem_mov, tem_comp]):
+        flash('Não é possível excluir permanentemente: a empresa possui vínculos com dados.', 'warning')
+        return redirect(url_for('empresas'))
+
+    # Hard delete (exclusão permanente)
+    db.session.delete(empresa)
+    db.session.commit()
+    flash('Empresa excluída permanentemente com sucesso.', 'success')
     return redirect(url_for('empresas'))
 
 @app.route('/editar_conta', methods=['GET', 'POST'])
@@ -1234,6 +1234,12 @@ def api_inventario():
 @login_required
 def api_registrar_movimentacao():
     data = request.json
+    
+    # Garantir que o empresa_id seja sempre definido
+    empresa_id = getattr(current_user, 'empresa_id', current_user.id)
+    if empresa_id is None:
+        empresa_id = current_user.id
+    
     mov = Movimentacao(
         produto_id=data['produto_id'],
         tipo=data['tipo'],
@@ -1241,9 +1247,9 @@ def api_registrar_movimentacao():
         valor_unitario=data['valor_unitario'],
         custo_unitario=data.get('custo_unitario'),
         usuario_id=current_user.id,
-        empresa_id=getattr(current_user, 'empresa_id', current_user.id)
+        empresa_id=empresa_id
     )
-    produto = Produto.query.filter_by(id=data['produto_id'], empresa_id=getattr(current_user, 'empresa_id', current_user.id)).first_or_404()
+    produto = Produto.query.filter_by(id=data['produto_id'], empresa_id=empresa_id).first_or_404()
     if data['tipo'] == 'compra':
         produto.quantidade_estoque += data['quantidade']
         produto.preco_compra = data['valor_unitario']
@@ -1697,6 +1703,165 @@ def api_movimentacao_detalhes(movimentacao_id):
         'valor_unitario': movimentacao.valor_unitario,
         'data': movimentacao.data.strftime('%d/%m/%Y %H:%M')
     })
+
+@app.route('/debug_produtos')
+@login_required
+def debug_produtos():
+    """Rota de debug para verificar produtos e empresas visíveis"""
+    if not current_user.is_authenticated:
+        return jsonify({'error': 'Usuário não autenticado'})
+    
+    # Debug da função empresas_visiveis_ids
+    empresas_ids = empresas_visiveis_ids()
+    
+    # Todos os produtos sem filtro
+    todos_produtos = Produto.query.all()
+    
+    # Produtos filtrados pela função
+    produtos_filtrados = Produto.query.filter(Produto.empresa_id.in_(empresas_ids)).all()
+    
+    # Informações do usuário atual
+    usuario_info = {
+        'id': current_user.id,
+        'nome': current_user.nome,
+        'empresa_id': getattr(current_user, 'empresa_id', None),
+        'role': getattr(current_user, 'role', None)
+    }
+    
+    return jsonify({
+        'usuario': usuario_info,
+        'empresas_visiveis_ids': empresas_ids,
+        'total_produtos_sem_filtro': len(todos_produtos),
+        'total_produtos_filtrados': len(produtos_filtrados),
+        'produtos_sem_filtro': [
+            {
+                'id': p.id,
+                'nome': p.nome,
+                'empresa_id': p.empresa_id,
+                'quantidade_estoque': p.quantidade_estoque
+            } for p in todos_produtos
+        ],
+        'produtos_filtrados': [
+            {
+                'id': p.id,
+                'nome': p.nome,
+                'empresa_id': p.empresa_id,
+                'quantidade_estoque': p.quantidade_estoque
+            } for p in produtos_filtrados
+        ]
+    })
+
+@app.route('/corrigir_produtos_empresa')
+@login_required
+@role_required('administrador')
+def corrigir_produtos_empresa():
+    """Corrige produtos existentes que não tenham empresa_id definido"""
+    try:
+        # Buscar produtos sem empresa_id
+        produtos_sem_empresa = Produto.query.filter_by(empresa_id=None).all()
+        
+        if not produtos_sem_empresa:
+            flash('Todos os produtos já têm empresa_id definido.', 'info')
+            return redirect(url_for('index'))
+        
+        # Garantir que o empresa_id seja sempre definido
+        empresa_id = getattr(current_user, 'empresa_id', current_user.id)
+        if empresa_id is None:
+            empresa_id = current_user.id
+        
+        # Atualizar produtos
+        for produto in produtos_sem_empresa:
+            produto.empresa_id = empresa_id
+        
+        db.session.commit()
+        
+        flash(f'{len(produtos_sem_empresa)} produtos foram corrigidos com empresa_id={empresa_id}.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao corrigir produtos: {e}', 'danger')
+    
+    return redirect(url_for('index'))
+
+# ---------------------- Administração de Usuários (site_admin) ----------------------
+@app.route('/usuarios', methods=['GET', 'POST'])
+@login_required
+@role_required('site_admin')
+def usuarios():
+    """Listagem e gerenciamento de usuários (somente para site_admin).
+
+    - GET: lista todos os usuários
+    - POST: atualiza empresa_id de um usuário
+    """
+    if request.method == 'POST':
+        usuario_id = request.form.get('usuario_id')
+        empresa_id = request.form.get('empresa_id')
+        
+        if usuario_id and empresa_id:
+            usuario = Usuario.query.get(usuario_id)
+            empresa = Empresa.query.get(empresa_id)
+            
+            if usuario and empresa:
+                usuario.empresa_id = empresa.id
+                db.session.commit()
+                flash(f'Usuário {usuario.nome} associado à empresa {empresa.nome}.', 'success')
+            else:
+                flash('Usuário ou empresa não encontrados.', 'danger')
+        elif usuario_id and empresa_id == '':
+            # Remover empresa do usuário
+            usuario = Usuario.query.get(usuario_id)
+            if usuario:
+                usuario.empresa_id = None
+                db.session.commit()
+                flash(f'Usuário {usuario.nome} removido da empresa.', 'success')
+    
+    usuarios = Usuario.query.order_by(Usuario.nome.asc()).all()
+    empresas = Empresa.query.order_by(Empresa.nome.asc()).all()
+    
+    return render_template('usuarios.html', usuarios=usuarios, empresas=empresas)
+
+@app.route('/teste_compartilhamento')
+@login_required
+@role_required('site_admin')
+def teste_compartilhamento():
+    """Rota para testar o compartilhamento em tempo real"""
+    
+    # Buscar todas as empresas ativas
+    empresas = Empresa.query.filter_by(ativo=True).order_by(Empresa.nome).all()
+    
+    # Buscar todos os relacionamentos ativos entre empresas
+    relacoes_ativas = CompartilhamentoEmpresa.query.filter(
+        CompartilhamentoEmpresa.empresa_a_id != CompartilhamentoEmpresa.empresa_b_id,
+        CompartilhamentoEmpresa.ativo == True
+    ).all()
+    
+    # Buscar dados compartilhados para cada relacionamento
+    dados_compartilhados = {}
+    for rel in relacoes_ativas:
+        # Buscar dados das empresas relacionadas
+        produtos_empresa_a = Produto.query.filter_by(empresa_id=rel.empresa_a_id).limit(5).all()
+        produtos_empresa_b = Produto.query.filter_by(empresa_id=rel.empresa_b_id).limit(5).all()
+        
+        movimentacoes_empresa_a = Movimentacao.query.filter_by(empresa_id=rel.empresa_a_id).limit(5).all()
+        movimentacoes_empresa_b = Movimentacao.query.filter_by(empresa_id=rel.empresa_b_id).limit(5).all()
+        
+        dados_compartilhados[rel.id] = {
+            'empresa_a': Empresa.query.get(rel.empresa_a_id),
+            'empresa_b': Empresa.query.get(rel.empresa_b_id),
+            'produtos_a': produtos_empresa_a,
+            'produtos_b': produtos_empresa_b,
+            'movimentacoes_a': movimentacoes_empresa_a,
+            'movimentacoes_b': movimentacoes_empresa_b,
+            'total_produtos_a': Produto.query.filter_by(empresa_id=rel.empresa_a_id).count(),
+            'total_produtos_b': Produto.query.filter_by(empresa_id=rel.empresa_b_id).count(),
+            'total_movimentacoes_a': Movimentacao.query.filter_by(empresa_id=rel.empresa_a_id).count(),
+            'total_movimentacoes_b': Movimentacao.query.filter_by(empresa_id=rel.empresa_b_id).count(),
+            'relacionamento': rel
+        }
+    
+    return render_template('teste_compartilhamento.html',
+                         empresas=empresas,
+                         dados_compartilhados=dados_compartilhados)
 
 if __name__ == '__main__':
     with app.app_context():
