@@ -77,6 +77,9 @@ def login():
                 return redirect(url_for('config_compartilhamento'))
             if usuario.role == 'contador':
                 return redirect(url_for('relatorio_fiscal'))
+            # Verificar se o usuário não tem empresa associada
+            if usuario.empresa_id is None:
+                flash('Você ainda não está associado a uma empresa. Aguarde a associação pelo administrador do sistema.', 'warning')
             return redirect(url_for('index'))
         else:
             flash('E-mail ou senha incorretos.', 'danger')
