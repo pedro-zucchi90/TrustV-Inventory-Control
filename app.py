@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, flash, request, Response, jsonify, make_response, abort
+from flask import Flask, render_template, redirect, url_for, flash, request, Response, jsonify, make_response
 import csv
 from flask_sqlalchemy import SQLAlchemy
 from models import db, Produto
@@ -16,6 +16,7 @@ from datetime import datetime
 from sqlalchemy import extract, inspect, text
 from forms import CadastroUsuarioForm, EditarUsuarioForm, EmpresaForm  # Formulário de Empresa para CRUD do site_admin
 from functools import wraps
+
 import pdfkit
 from config_fiscal import (
     calcular_impostos_vendas, 
@@ -93,12 +94,7 @@ def logout():
 @login_required
 @role_required('administrador', 'vendedor')
 def index():
-    empresa_id_atual = getattr(current_user, 'empresa_id', None)
-    produtos = (
-        Produto.query.filter_by(empresa_id=empresa_id_atual).all()
-        if empresa_id_atual is not None else
-        Produto.query.all()
-    )
+    produtos = Produto.query.filter(Produto.empresa_id.in_(empresas_visiveis_ids())).all()
     def custo_medio(produto):
         compras = [m for m in produto.movimentacoes if m.tipo == 'compra']
         total_qtd = sum(m.quantidade for m in compras)
@@ -109,11 +105,8 @@ def index():
 
     mes = datetime.now().month
     ano = datetime.now().year
-    base_vendas_q = Movimentacao.query.filter(Movimentacao.tipo=='venda')
-    if empresa_id_atual is not None:
-        base_vendas_q = base_vendas_q.filter_by(empresa_id=empresa_id_atual)
     vendas_mes = (
-        base_vendas_q
+        Movimentacao.query.filter(Movimentacao.tipo=='venda', Movimentacao.empresa_id.in_(empresas_visiveis_ids()))
         .filter(extract('month', Movimentacao.data) == mes, extract('year', Movimentacao.data) == ano)
         .all()
     )
@@ -194,11 +187,15 @@ def index():
     for i in range(5, -1, -1):
         mes_ref = (datetime.now().month - i - 1) % 12 + 1
         ano_ref = datetime.now().year if datetime.now().month - i > 0 else datetime.now().year - 1
-        vendas = (
-            Movimentacao.query.filter_by(tipo='venda', usuario_id=current_user.id)
-            .filter(extract('month', Movimentacao.data) == mes_ref, extract('year', Movimentacao.data) == ano_ref)
-            .all()
-        )
+        # Se o usuário tem empresa, filtra por empresa, senão retorna lista vazia
+        if current_user.empresa_id:
+            vendas = (
+                Movimentacao.query.filter_by(tipo='venda', empresa_id=current_user.empresa_id)
+                .filter(extract('month', Movimentacao.data) == mes_ref, extract('year', Movimentacao.data) == ano_ref)
+                .all()
+            )
+        else:
+            vendas = []
         lucro = 0
         for venda in vendas:
             produto = Produto.query.get(venda.produto_id)
@@ -385,7 +382,7 @@ def listar_movimentacoes():
         return redirect(url_for('index'))
     
     movimentacoes = (
-        Movimentacao.query.filter_by(empresa_id=getattr(current_user, 'empresa_id', current_user.id))
+        Movimentacao.query.filter_by(empresa_id=empresa_id)
         .order_by(Movimentacao.data.desc()).all()
     )
     return render_template('movimentacoes.html', movimentacoes=movimentacoes)
