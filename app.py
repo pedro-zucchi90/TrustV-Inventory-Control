@@ -190,11 +190,15 @@ def index():
     for i in range(5, -1, -1):
         mes_ref = (datetime.now().month - i - 1) % 12 + 1
         ano_ref = datetime.now().year if datetime.now().month - i > 0 else datetime.now().year - 1
-        vendas = (
-            Movimentacao.query.filter_by(tipo='venda', usuario_id=current_user.id)
-            .filter(extract('month', Movimentacao.data) == mes_ref, extract('year', Movimentacao.data) == ano_ref)
-            .all()
-        )
+        # Se o usuário tem empresa, filtra por empresa, senão retorna lista vazia
+        if current_user.empresa_id:
+            vendas = (
+                Movimentacao.query.filter_by(tipo='venda', empresa_id=current_user.empresa_id)
+                .filter(extract('month', Movimentacao.data) == mes_ref, extract('year', Movimentacao.data) == ano_ref)
+                .all()
+            )
+        else:
+            vendas = []
         lucro = 0
         for venda in vendas:
             produto = Produto.query.get(venda.produto_id)
