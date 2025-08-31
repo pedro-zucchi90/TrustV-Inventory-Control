@@ -1,3 +1,4 @@
+
 # TrustV Inventory Control
 
 ![GitHub repo size](https://img.shields.io/github/repo-size/pedro-zucchi90/TrustV-Inventory-Control?style=flat-square)
@@ -75,41 +76,73 @@ O **TrustV Inventory Control** é um sistema de gestão de inventário e control
 ├── config_fiscal.py      # Regras fiscais customizáveis
 ├── requirements.txt
 └── README.md
-```
+````
 
 ---
 
 ## Funcionalidades
-- Cadastro e gestão de produtos
-- Controle de estoque com métodos de custeio (FIFO, preço médio)
-- Cálculo automático do lucro tributável
-- Relatórios fiscais e alertas de divergência
-- Autenticação de usuários (Flask-Login)
-- Auditoria e rastreamento de alterações
-- Exportação de relatórios fiscais (CSV/PDF)
-- API para preço médio dos produtos e preço médio geral
-- Sistema de devolução de vendas integrado ao estoque
-- Interface web responsiva e moderna
-- Navegação facilitada entre movimentações e devoluções
-- Melhorias de usabilidade e acessibilidade
+
+* Cadastro e gestão de produtos
+* Controle de estoque com métodos de custeio (FIFO, preço médio)
+* Cálculo automático do lucro tributável
+* Relatórios fiscais e alertas de divergência
+* Autenticação de usuários (Flask-Login)
+* Auditoria e rastreamento de alterações
+* Exportação de relatórios fiscais (CSV/PDF)
+* API para preço médio dos produtos e preço médio geral
+* Sistema de devolução de vendas integrado ao estoque
+* Interface web responsiva e moderna
+* Navegação facilitada entre movimentações e devoluções
+* Melhorias de usabilidade e acessibilidade
+
+---
+
+## Tipos de Contas e Permissões
+
+O sistema possui diferentes **níveis de acesso** para garantir maior segurança e controle sobre os dados:
+
+* **Administrador do Sistema** 🛠️
+
+  * Cria e gerencia as empresas dentro da plataforma.
+  * Adiciona e organiza contas dentro de cada empresa.
+  * Tem acesso global a todos os dados e configurações.
+
+* **Administrador da Empresa** 📂
+
+  * Tem acesso completo a **todas as informações da empresa**.
+  * Pode visualizar, editar e excluir dados de produtos, movimentações e relatórios.
+
+* **Contador** 📊
+
+  * Acesso restrito aos **relatórios fiscais e financeiros** da empresa.
+  * Não pode alterar informações de estoque ou cadastrar produtos.
+
+* **Vendedor** 🛒
+
+  * Pode **cadastrar produtos**, **realizar vendas**, **registrar compras** e **devoluções**.
+  * Não tem acesso a relatórios fiscais completos.
 
 ---
 
 ## Usabilidade e Visual
-- **Botões de ação rápida** centralizados, tamanhos consistentes e layout adaptável.
-- **Responsividade** para desktop e mobile.
-- **Contraste e acessibilidade** otimizados.
-- **Ajuste automático de fonte** para nomes e textos grandes.
+
+* **Botões de ação rápida** centralizados, tamanhos consistentes e layout adaptável.
+* **Responsividade** para desktop e mobile.
+* **Contraste e acessibilidade** otimizados.
+* **Ajuste automático de fonte** para nomes e textos grandes.
 
 ---
 
 ## Como Executar
 
 1. Instale as dependências:
+
    ```bash
    pip install -r requirements.txt
    ```
+
 2. **Crie o arquivo `config.py` na raiz do projeto:**
+
    ```python
    import os
 
@@ -119,11 +152,12 @@ O **TrustV Inventory Control** é um sistema de gestão de inventário e control
        SQLALCHEMY_DATABASE_URI = f"sqlite:///{os.path.join(basedir, 'instance', 'database.db')}"
        SQLALCHEMY_TRACK_MODIFICATIONS = False
    ```
+
    > Você pode personalizar a chave secreta e o nome do banco conforme sua necessidade.
 
 3. **Configuração fiscal personalizada**
-   
-   O arquivo `config_fiscal.py` centraliza as regras fiscais (impostos, despesas, CMV).  
+
+   O arquivo `config_fiscal.py` centraliza as regras fiscais (impostos, despesas, CMV).
    Edite livremente para adaptar o sistema à sua realidade.
 
    ```python
@@ -137,20 +171,25 @@ O **TrustV Inventory Control** é um sistema de gestão de inventário e control
    ```
 
 4. Execute o app:
+
    ```bash
    python app.py
    ```
+
 5. Acesse em [http://localhost:5000](http://localhost:5000)
 
 ---
 
 ## Diferenciais Fiscais
-- Apuração do imposto sobre o lucro real, conforme custo atualizado do produto
-- Relatórios prontos para auditoria e exportação
-- Alertas automáticos de divergência fiscal
-- Auditoria completa de ações
-- Sistema de devolução de vendas com ajuste automático de estoque
+
+* Apuração do imposto sobre o lucro real, conforme custo atualizado do produto
+* Relatórios prontos para auditoria e exportação
+* Alertas automáticos de divergência fiscal
+* Auditoria completa de ações
+* Sistema de devolução de vendas com ajuste automático de estoque
 
 ---
 
 **Desenvolvido por TrustV.**
+
+
