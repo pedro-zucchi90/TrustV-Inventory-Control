@@ -19,18 +19,26 @@
             {% if current_user.role == 'site_admin' %}
             <a href="{{ url_for('empresas') }}" class="{% if request.endpoint in ['empresas','editar_empresa'] %}active nav-current{% endif %}"><i class="bi bi-building"></i> Empresas</a>
             <a href="{{ url_for('usuarios') }}" class="{% if request.endpoint == 'usuarios' %}active nav-current{% endif %}"><i class="bi bi-people-fill"></i> Usuários</a>
-            <a href="{{ url_for('config_compartilhamento') }}" class="{% if request.endpoint == 'config_compartilhamento' %}active nav-current{% endif %}"><i class="bi bi-people"></i> Compartilhamento</a>
             {% endif %}
+
+            {# Vendedor e Administrador compartilham algumas funcionalidades #}
             {% if current_user.role in ['administrador', 'vendedor'] %}
             <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}active nav-current{% endif %}"><i class="bi bi-speedometer2"></i> Dashboard</a>
             <a href="{{ url_for('listar_produtos') }}" class="{% if request.endpoint == 'listar_produtos' %}active nav-current{% endif %}"><i class="bi bi-box-seam"></i> Produtos</a>
-            <a href="{{ url_for('registrar_movimentacao', tipo='compra') }}" class="{% if request.endpoint == 'registrar_movimentacao' and request.args.get('tipo') == 'compra' %}active nav-current{% endif %}"><i class="bi bi-cart-plus"></i> Compras</a>
             <a href="{{ url_for('registrar_movimentacao', tipo='venda') }}" class="{% if request.endpoint == 'registrar_movimentacao' and request.args.get('tipo') == 'venda' %}active nav-current{% endif %}"><i class="bi bi-cart-check"></i> Vendas</a>
             <a href="{{ url_for('listar_devolucoes') }}" class="{% if request.endpoint == 'listar_devolucoes' %}active nav-current{% endif %}"><i class="bi bi-arrow-return-left"></i> Devoluções</a>
             <a href="{{ url_for('listar_movimentacoes') }}" class="{% if request.endpoint == 'listar_movimentacoes' %}active nav-current{% endif %}"><i class="bi bi-clock-history"></i> Histórico de Movimentações</a>
             {% endif %}
-            {% if current_user.role in ['administrador', 'contador'] %}
+
+            {# Funcionalidades exclusivas do Administrador #}
+            {% if current_user.role == 'administrador' %}
+            <a href="{{ url_for('registrar_movimentacao', tipo='compra') }}" class="{% if request.endpoint == 'registrar_movimentacao' and request.args.get('tipo') == 'compra' %}active nav-current{% endif %}"><i class="bi bi-cart-plus"></i> Compras</a>
+            {% endif %}
+
+            {# Funcionalidades do Contador #}
+            {% if current_user.role == 'contador' %}
             <a href="{{ url_for('relatorio_fiscal') }}" class="{% if request.endpoint == 'relatorio_fiscal' %}active nav-current{% endif %}"><i class="bi bi-file-earmark-bar-graph"></i> Relatório Fiscal</a>
+            <a href="{{ url_for('relatorio_estoque') }}" class="{% if request.endpoint == 'relatorio_estoque' %}active nav-current{% endif %}"><i class="bi bi-file-earmark-spreadsheet"></i> Relatório de Estoque</a>
             <a href="{{ url_for('relatorio_geral_completo') }}" class="{% if request.endpoint == 'relatorio_geral_completo' %}active nav-current{% endif %}"><i class="bi bi-file-earmark-text"></i> Relatório Completo</a>
             {% endif %}
         </nav>
