@@ -105,7 +105,7 @@ O sistema possui diferentes **níveis de acesso** para garantir maior segurança
 
   * Cria e gerencia as empresas dentro da plataforma.
   * Adiciona e organiza contas dentro de cada empresa.
-  * Tem acesso global a todos os dados e configurações.
+  * Tem acesso global a todos os dados e configurações do sistema (OBS: Não tem acesso aos dados das empresas).
 
 * **Administrador da Empresa** 📂
 
@@ -191,5 +191,6 @@ O sistema possui diferentes **níveis de acesso** para garantir maior segurança
 ---
 
 **Desenvolvido por TrustV.**
+
 
 
