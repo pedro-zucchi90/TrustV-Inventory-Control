@@ -104,9 +104,9 @@ body {
     align-items: center;
     padding: 0 32px;
     box-shadow: none !important;
-    position: sticky;
+    position: relative; /* importante para posicionar .topbar-notification */
     top: 0;
-    z-index: 10;
+    z-index: 110;
     border-bottom: none !important;
 }
 .topbar .search {
@@ -155,6 +155,36 @@ body {
     color: #a0aec0;
 }
 
+/* Notification na topbar (posicionada entre sidebar e área do perfil)
+   Ajuste: left = largura da sidebar + 10px, right = distância que deixa espaço para o perfil.
+   Valores são responsivos abaixo. */
+.topbar-notification {
+    position: absolute;
+    top: 9px;
+    left: calc(230px + 16px);  /* garante distância da sidebar */
+    right: 240px;              /* deixa espaço para o perfil à direita */
+    z-index: 120;
+    margin: 0 auto;
+    border-radius: 10px;
+    padding: 10px 16px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+/* Small screens: vira full width abaixo do topbar */
+@media (max-width: 900px) {
+    .topbar-notification {
+        position: static;
+        left: auto;
+        right: auto;
+        width: auto;
+        margin: 12px 16px;
+    }
+}
+
 /* Cards de indicadores */
 .cards {
     display: flex;
@@ -201,7 +231,10 @@ body {
     padding: 24px 32px;
     margin-bottom: 24px;
     border: 1px solid #e9ecef;
+    display: flex;
+    flex-direction: column;
 }
+/* header do gráfico */
 .grafico-box .grafico-header {
     display: flex;
     justify-content: space-between;
@@ -212,14 +245,40 @@ body {
     margin-left: 8px;
 }
 
+/* === Regras para manter os gráficos lado a lado com mesma altura e sem vácuo === */
+.row.graficos {
+    display: flex;
+    align-items: stretch;
+    gap: 24px;
+}
+.row.graficos > .col-md-6 {
+    display: flex;
+    flex: 1;
+}
+.row.graficos > .col-md-6 .grafico-box {
+    flex: 1;               /* expande para mesma altura */
+    margin-bottom: 0 !important;
+    display: flex;
+    flex-direction: column;
+}
+.row.graficos > .col-md-6 .grafico-box .d-flex.justify-content-center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+/* fim das regras dos gráficos */
+
 /* Tabelas */
 .table-box {
     background: #ffffff;
     border-radius: 16px;
     box-shadow: 0 4px 16px rgba(0,0,0,0.1);
     padding: 24px 32px;
-    margin-bottom: 32px; /* Aumentado de 24px para 32px */
+    margin-bottom: 32px;
     border: 1px solid #e9ecef;
+    display: flex;
+    flex-direction: column;
 }
 .table-box table {
     width: 100%;
@@ -246,6 +305,18 @@ body {
     font-weight: bold;
     font-size: 1.2rem;
 }
+
+/* === Colunas iguais na tabela de divergências (aplica a tabelas dentro de .table-box) ===
+   Ajuste com calc(100% / 6) porque a sua tabela tem 6 colunas. Se mudar # colunas, ajuste o 6. */
+.table-box table th,
+.table-box table td {
+    width: calc(100% / 6);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* final colunas iguais */
 
 /* Botões */
 .btn {
@@ -341,6 +412,9 @@ body {
     border-radius: 8px;
     margin-bottom: 16px;
     border: 1px solid;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 .alert-danger {
     background: #f8d7da;
@@ -599,34 +673,6 @@ input:required:valid, select:required:valid, textarea:required:valid {
     transform: translateY(-2px) scale(1.03);
 }
 
-.btn-outline-success {
-    background: transparent !important;
-    color: #1bc47d !important;
-    border: 2px solid #1bc47d !important;
-}
-
-.btn-outline-success:hover, .btn-outline-success:focus {
-    background: #1bc47d !important;
-    color: #fff !important;
-    border-color: #159c5b !important;
-    box-shadow: 0 4px 16px rgba(27,196,125,0.18);
-    transform: translateY(-2px) scale(1.03);
-}
-
-.btn-outline-danger {
-    background: transparent !important;
-    color: #ff4d4f !important;
-    border: 2px solid #ff4d4f !important;
-}
-
-.btn-outline-danger:hover, .btn-outline-danger:focus {
-    background: #ff4d4f !important;
-    color: #fff !important;
-    border-color: #d32f2f !important;
-    box-shadow: 0 4px 16px rgba(255,77,79,0.18);
-    transform: translateY(-2px) scale(1.03);
-}
-
 .row .btn.w-100.mb-2 {
     min-height: 56px;
     font-size: 1.08rem;
@@ -678,15 +724,30 @@ input:required:valid, select:required:valid, textarea:required:valid {
     vertical-align: middle !important;
 }
 
-.table, .table-box, .table-bordered, .table-striped, table {
-    border-radius: 16px !important;
-    overflow: hidden;
-    border-collapse: separate !important;
-    border-spacing: 0;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.10);
-    margin-bottom: 0;
-} 
+/* Igualar altura Últimas Transações / Ações Rápidas */
+.row.equal-height {
+    display: flex;
+    gap: 24px;
+    align-items: stretch;
+}
+.row.equal-height > .col-md-6 {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+.row.equal-height > .col-md-6 .table-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.row.equal-height > .col-md-6 .table-box .d-flex.flex-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
 
+/* btn-acao */
 .btn-acao {
   min-width: 120px !important;
   max-width: 140px !important;
@@ -713,53 +774,7 @@ input:required:valid, select:required:valid, textarea:required:valid {
   outline-offset: 0 !important;
 }
 
-.btn-acao.w-100, .btn-acao.btn, .btn-acao.btn-outline-primary, .btn-acao.btn-funcionalidade {
-  width: 100% !important;
-  min-width: 120px !important;
-  max-width: 140px !important;
-  display: flex !important;
-}
-
-.btn-acao i {
-  font-size: 1.1em !important;
-  margin-right: 0 !important;
-  margin-left: 0 !important;
-  padding-right: 0.3rem !important;
-  padding-left: 0 !important;
-  flex-shrink: 0 !important;
-}
-
-.btn-acao .text {
-  flex: 1 1 0% !important;
-  text-align: center !important;
-  display: block !important;
-  width: 100% !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  font-size: 0.9rem !important;
-  transition: font-size 0.2s !important;
-}
-
-.btn-acao .text.long, .btn-acao .text[data-long="true"] {
-  font-size: 0.92rem !important;
-}
-
-@media (max-width: 600px) {
-  .btn-acao, .btn-acao.w-100 {
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    font-size: 0.85rem !important;
-    padding-left: 0.4rem !important;
-    padding-right: 0.4rem !important;
-  }
-  .btn-acao .text {
-    font-size: 0.85rem !important;
-  }
-} 
-
-/* Dark mode for login and register forms */
+/* Dark mode for login and register forms (corrigido seletor) */
 .login-dark, .register-dark, .container.login-dark, .container.register-dark {
     background: #10131a !important;
     color: #fff !important;
@@ -781,8 +796,9 @@ input:required:valid, select:required:valid, textarea:required:valid {
 }
 .login-dark a, .register-dark a, .container.login-dark a, .container.register-dark a {
     color: #60a5fa !important;
-} 
+}
 
+/* Ações rápidas layout */
 .acoes-rapidas {
     justify-content: flex-start;
 }
@@ -792,9 +808,9 @@ input:required:valid, select:required:valid, textarea:required:valid {
     }
 }
 
-/* Sidebar: impede que fique estreita demais e o conteúdo saia para fora */
+/* ajustes finais de layout e segurança para sidebar */
 .sidebar {
-    min-width: 180px;      /* Nunca menor que 180px */
+    min-width: 180px;
     width: 230px;
     max-width: 100vw;
     overflow-x: auto;
@@ -802,359 +818,7 @@ input:required:valid, select:required:valid, textarea:required:valid {
     word-break: break-word;
 }
 
-/* Garante que o texto e logo quebrem linha se necessário */
-.sidebar .logo {
-    white-space: normal;
-    word-break: break-word;
-    overflow-wrap: break-word;
-}
-
-/* Ajuste para textos dos links da sidebar não saírem para fora */
-.sidebar nav a {
-    white-space: normal;
-    word-break: break-word;
-    overflow-wrap: break-word;
-}
-
-/* Em telas menores, mantém largura mínima para sidebar */
-@media (max-width: 1100px) {
-    .sidebar {
-        min-width: 120px;
-        width: 100px;
-    }
-}
-
-/* Layout para as boxes de vendas e monitoramento */
-.row .col-md-6 .card {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-.row .col-md-6 .card .card-body {
-    flex: 1;
-    display: flex;
-    align-items: center;
-}
-
-.row .col-md-6 .d-flex.flex-column {
-    height: 100%;
-}
-
-.row .col-md-6 .d-flex.flex-column .card {
-    flex: 1;
-    margin-bottom: 1rem;
-}
-
-.row .col-md-6 .d-flex.flex-column .card:last-child {
-    margin-bottom: 0;
-}
-
-/* Ajuste para o conteúdo das boxes de monitoramento */
-#alertas-container,
-#produtos-mais-vendidos,
-#produtos-margem {
-    min-height: 80px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Estilização específica para os botões do relatório fiscal */
-.btn-lg {
-    padding: 12px 24px !important;
-    font-size: 1.1rem !important;
-    font-weight: 600 !important;
-    border-radius: 12px !important;
-    transition: all 0.3s ease !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
-}
-
-.btn-lg:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.15) !important;
-}
-
-.btn-warning {
-    background: linear-gradient(135deg, #ffc107, #ff9800) !important;
-    border: none !important;
-    color: #fff !important;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;
-}
-
-.btn-warning:hover {
-    background: linear-gradient(135deg, #ff9800, #f57c00) !important;
-    color: #fff !important;
-}
-
-.btn-outline-primary {
-    border-width: 2px !important;
-    font-weight: 600 !important;
-}
-
-.btn-outline-success {
-    border-width: 2px !important;
-    font-weight: 600 !important;
-}
-
-/* Garantir que as boxes de análise fiscal tenham a mesma altura */
-.row .col-md-6 .card {
-    height: 100%;
-}
-
-/* Ajuste específico para as boxes de dados fiscais e despesas */
-.row .col-md-6 .card .card-body {
-    min-height: 120px; /* Reduzido de 160px para 120px */
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    padding: 12px 16px !important; /* Reduzido padding */
-}
-
-.row .col-md-6 .card .card-body p {
-    margin-bottom: 0.25rem; /* Reduzido de 0.75rem para 0.25rem */
-    flex: 1;
-    display: flex;
-    align-items: flex-start;
-    justify-content: flex-start;
-    min-height: 1.2rem; /* Reduzido de 1.5rem para 1.2rem */
-    text-align: left;
-    font-size: 0.9rem; /* Reduzido tamanho da fonte */
-    line-height: 1.2; /* Reduzido espaçamento entre linhas */
-}
-
-.row .col-md-6 .card .card-body p:last-child {
-    margin-bottom: 0;
-}
-
-/* Garantir que as boxes de gráficos tenham a mesma altura */
-.row .col-md-6 .grafico-box {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 40px !important; /* Espaçamento consistente entre boxes */
-}
-
-.row .col-md-6 .grafico-box .grafico-header {
-    flex-shrink: 0;
-}
-
-.row .col-md-6 .grafico-box .d-flex.justify-content-center {
-    flex: 1;
-    display: flex;
-    align-items: center;
-}
-
-.row .col-md-6 .grafico-box .text-muted {
-    flex-shrink: 0;
-}
-
-/* Espaçamento adicional para separar melhor as seções */
-.grafico-box + .table-box {
-    margin-top: 24px; /* Espaçamento adicional após boxes de gráfico */
-}
-
-/* Ajuste para a tabela de divergências fiscais */
-.table-box:has(.fw-bold:contains("Produtos com Divergência Fiscal")) {
-    margin-top: 32px; /* Espaçamento extra para esta tabela específica */
-}
-
-/* Ajuste para as boxes de vendas e monitoramento ficarem menores */
-.row .col-md-6 .card {
-    min-height: 280px !important; /* Reduzido de 320px para 280px */
-    max-height: 320px !important; /* Reduzido de 360px para 320px */
-}
-
-.row .col-md-6 .d-flex.flex-column .card {
-    min-height: 80px !important; /* Reduzido de 90px para 80px */
-    max-height: 100px !important; /* Reduzido de 110px para 100px */
-}
-
-.row .col-md-6 .d-flex.flex-column .card .card-body {
-    padding: 8px 12px !important; /* Reduzido padding */
-}
-
-.row .col-md-6 .card .card-body {
-    padding: 12px 16px !important; /* Reduzido padding */
-}
-
-/* Diminuir espaçamento entre textos nas boxes */
-.row .col-md-6 .card .card-body .text-center {
-    margin-bottom: 0.125rem !important; /* Reduzido de 0.25rem para 0.125rem */
-}
-
-.row .col-md-6 .card .card-body .text-center:last-child {
-    margin-bottom: 0 !important;
-}
-
-.row .col-md-6 .card .card-body h3 {
-    margin-bottom: 1px !important; /* Reduzido de 2px para 1px */
-}
-
-.row .col-md-6 .card .card-body p {
-    margin-bottom: 0.125rem !important; /* Reduzido de 0.125rem para 0.125rem (já estava correto) */
-}
-
-.row .col-md-6 .d-flex.flex-column .card .card-body p {
-    margin-bottom: 0.125rem !important; /* Reduzido de 0.25rem para 0.125rem */
-}
-
-/* Estilos específicos para o formulário de empresas */
-.card .card-body form .d-flex.flex-column {
-    gap: 8px !important;
-}
-
-.card .card-body form .d-flex.flex-column .d-flex {
-    gap: 8px !important;
-}
-
-.card .card-body form .btn {
-    width: 100% !important;
-    margin: 0 !important;
-}
-
-.card .card-body form .d-flex .btn {
-    flex: 1 !important;
-    min-width: 0 !important;
-}
-
-/* Garantir que os botões de ação na tabela tenham largura consistente */
-.table td .d-flex.flex-column {
-    gap: 4px !important;
-}
-
-.table td .d-flex.flex-column form {
-    width: 100% !important;
-}
-
-.table td .d-flex.flex-column .btn {
-    width: 100% !important;
-    min-height: 32px !important;
-    font-size: 0.85rem !important;
-    padding: 4px 8px !important;
-}
-
-/* Estilos específicos para os botões da tabela de empresas */
-.table td .btn-primary {
-    background: #007bff !important;
-    color: #fff !important;
-    border: none !important;
-    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3) !important;
-    transition: all 0.2s ease !important;
-}
-.table td .btn-primary:hover {
-    background: #0056b3 !important;
-    transform: translateY(-1px) !important;
-    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.4) !important;
-}
-
-.table td .btn-warning {
-    background: #ffc107 !important;
-    color: #212529 !important;
-    border: none !important;
-    box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3) !important;
-    transition: all 0.2s ease !important;
-}
-.table td .btn-warning:hover {
-    background: #e0a800 !important;
-    transform: translateY(-1px) !important;
-    box-shadow: 0 4px 8px rgba(255, 193, 7, 0.4) !important;
-}
-
-.table td .btn-success {
-    background: #28a745 !important;
-    color: #fff !important;
-    border: none !important;
-    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3) !important;
-    transition: all 0.2s ease !important;
-}
-.table td .btn-success:hover {
-    background: #1e7e34 !important;
-    transform: translateY(-1px) !important;
-    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.4) !important;
-}
-
-.table td .btn-danger {
-    background: #dc3545 !important;
-    color: #fff !important;
-    border: none !important;
-    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3) !important;
-    transition: all 0.2s ease !important;
-}
-.table td .btn-danger:hover {
-    background: #c82333 !important;
-    transform: translateY(-1px) !important;
-    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.4) !important;
-}
-
-/* Estilos para os botões do formulário de empresas */
-.card .card-body form .btn-primary {
-    background: #007bff !important;
-    color: #fff !important;
-    border: none !important;
-    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3) !important;
-    transition: all 0.2s ease !important;
-}
-.card .card-body form .btn-primary:hover {
-    background: #0056b3 !important;
-    transform: translateY(-1px) !important;
-    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.4) !important;
-}
-
-.card .card-body form .btn-secondary {
-    background: #6c757d !important;
-    color: #fff !important;
-    border: none !important;
-    box-shadow: 0 2px 4px rgba(108, 117, 125, 0.3) !important;
-    transition: all 0.2s ease !important;
-}
-.card .card-body form .btn-secondary:hover {
-    background: #545b62 !important;
-    transform: translateY(-1px) !important;
-    box-shadow: 0 4px 8px rgba(108, 117, 125, 0.4) !important;
-}
-
-.card .card-body form .btn-warning {
-    background: #ffc107 !important;
-    color: #212529 !important;
-    border: none !important;
-    box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3) !important;
-    transition: all 0.2s ease !important;
-}
-.card .card-body form .btn-warning:hover {
-    background: #e0a800 !important;
-    transform: translateY(-1px) !important;
-    box-shadow: 0 4px 8px rgba(255, 193, 7, 0.4) !important;
-}
-
-/* Estilos gerais para botões */
-.btn {
-    border-radius: 6px !important;
-    font-weight: 500 !important;
-    text-transform: none !important;
-    letter-spacing: 0.3px !important;
-}
-
-.btn-lg {
-    padding: 12px 24px !important;
-    font-size: 16px !important;
-}
-
-.btn-sm {
-    padding: 6px 12px !important;
-    font-size: 14px !important;
-}
-
-/* Estilos para flex containers */
-.d-flex.flex-column {
-    gap: 8px !important;
-}
-
-.d-flex.flex-column .btn {
-    width: 100% !important;
-}
-
-/* Estilos para badges */
+/* Badges */
 .badge {
     font-weight: 500 !important;
     padding: 6px 10px !important;
@@ -1163,4 +827,27 @@ input:required:valid, select:required:valid, textarea:required:valid {
 
 .badge.bg-primary {
     background-color: #007bff !important;
+}
+
+
+/* Em telas pequenas volta ao comportamento normal */
+@media (max-width: 1100px) {
+    .container, .container-fluid, .main {
+        width: 100%;
+        margin-left: 0;
+        padding: 12px 16px;
+    }
+}
+
+/* Garantir que canvas de gráficos ocupem o espaço disponível nas boxes */
+.grafico-box canvas {
+    width: 100% !important;
+    height: 100% !important;
+    max-height: none !important;
+}
+
+/* Accessibility: foco visível para elementos interativos */
+a:focus, button:focus, .btn:focus {
+    outline: 3px solid rgba(30,136,229,0.18);
+    outline-offset: 2px;
 }
